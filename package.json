@@ -1,0 +1,40 @@
+{
+	"name": "basewa",
+	"version": "1.0.0",
+	"main": "index.js",
+	"type": "module",
+	"scripts": {
+		"start": "node --env-file=.env src/main.js",
+		"dev": "node --watch --env-file=.env src/main.js",
+		"prettier": "npx prettier . --write",
+		"lint": "eslint"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/nat9h/base.git"
+	},
+	"author": "Natsumi",
+	"license": "MIT",
+	"bugs": {
+		"url": "https://github.com/nat9h/base/issues"
+	},
+	"homepage": "https://github.com/nat9h/base#readme",
+	"description": "",
+	"dependencies": {
+		"baileys": "github:nstar-y/bail",
+		"mysql-baileys": "github:bobslavtriev/mysql-baileys",
+		"node-cache": "^5.1.2",
+		"qrcode": "^1.5.4"
+	},
+	"devDependencies": {
+		"@babel/eslint-parser": "^7.27.1",
+		"@eslint/js": "^9.27.0",
+		"@trivago/prettier-plugin-sort-imports": "^5.2.2",
+		"eslint": "^9.27.0",
+		"eslint-config-prettier": "^10.1.5",
+		"eslint-plugin-import": "^2.31.0",
+		"eslint-plugin-prettier": "^5.4.0",
+		"globals": "^16.2.0",
+		"prettier": "^3.5.3"
+	}
+}
