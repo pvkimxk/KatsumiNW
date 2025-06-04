@@ -1,5 +1,5 @@
 const log = (type, message, error = null) => {
-	const timestamp = new Date().toLocaleString("id-ID"); // Uses current local time
+	const timestamp = new Date().toLocaleString("id-ID");
 	let output = `[${timestamp}] [BOT ${type.toUpperCase()}] ${message}`;
 
 	if (error) {
@@ -17,13 +17,9 @@ const log = (type, message, error = null) => {
  * @param {object} m - The serialized message object.
  * @param {import('baileys').WASocket} sock - The Baileys socket object. This is essential for fetching group metadata.
  */
-export const printIncomingMessage = async (m, sock) => {
+export const print = async (m, sock) => {
 	if (!m || !m.messageTimestamp) {
-		log(
-			"DEBUG",
-			"Skipping printIncomingMessage due to missing message or timestamp.",
-			m
-		);
+		log("DEBUG", "Skipping print due to missing message or timestamp.", m);
 		return;
 	}
 
@@ -41,7 +37,7 @@ export const printIncomingMessage = async (m, sock) => {
 			} catch (e) {
 				log(
 					"WARN",
-					`Could not fetch group metadata for ${m.from} in printIncomingMessage: ${e.message}`
+					`Could not fetch group metadata for ${m.from} in print: ${e.message}`
 				);
 				chatName = `Group: ${m.from}`;
 			}

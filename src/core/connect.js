@@ -11,9 +11,9 @@ import readline from "node:readline";
 import qrcode from "qrcode";
 import { BOT_CONFIG, MYSQL_CONFIG } from "../config/index.js";
 import logger from "../lib/logger.js";
-import PluginManager from "../lib/plugin.js";
+import PluginManager from "../lib/plugins.js";
 import print from "../lib/print.js";
-import MessageProcessor from "./message.js";
+import Message from "./message.js";
 
 const rl = readline.createInterface({
 	input: process.stdin,
@@ -21,7 +21,7 @@ const rl = readline.createInterface({
 });
 
 /**
- * Prompts the user for input.
+ * User for input.
  * @param {string} query The question to ask the user.
  * @returns {Promise<string>} A promise that resolves with the user's input.
  */
@@ -36,7 +36,7 @@ function askQuestion(query) {
 /**
  * Main class to manage the WhatsApp bot connection and events.
  */
-class WhatsAppBot {
+class Connect {
 	constructor() {
 		this.sock = null;
 		this.sessionName = BOT_CONFIG.sessionName;
@@ -45,7 +45,7 @@ class WhatsAppBot {
 			checkperiod: 120,
 		});
 		this.pluginManager = new PluginManager(BOT_CONFIG);
-		this.messageProcessor = new MessageProcessor(
+		this.message = new Message(
 			this.pluginManager,
 			BOT_CONFIG,
 			this.groupMetadataCache
@@ -193,7 +193,7 @@ class WhatsAppBot {
 		});
 
 		this.sock.ev.on("messages.upsert", (data) =>
-			this.messageProcessor.process(this.sock, data)
+			this.message.process(this.sock, data)
 		);
 
 		this.sock.ev.on("chats.update", (_chats) => {
@@ -225,4 +225,4 @@ class WhatsAppBot {
 	}
 }
 
-export default WhatsAppBot;
+export default Connect;

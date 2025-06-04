@@ -1,12 +1,12 @@
-import { serializeMessage } from "../lib/message.js";
-import { printIncomingMessage } from "../lib/print.js";
+import { print } from "../lib/print.js";
+import { serializeMessage } from "../lib/serialize.js";
 
 /**
  * Class for processing incoming messages and routing them to the PluginManager.
  */
-class MessageProcessor {
+class Message {
 	/**
-	 * @param {import('../lib/plugin.js').default} pluginManager - The plugin manager instance.
+	 * @param {import('../lib/plugins.js').default} pluginManager - The plugin manager instance.
 	 * @param {object} botConfig - Bot configuration.
 	 * @param {import('node-cache')} groupMetadataCache - Cache for group metadata.
 	 */
@@ -45,7 +45,7 @@ class MessageProcessor {
 				m.metadata = this.groupMetadataCache.get(m.from) || null;
 			}
 
-			printIncomingMessage(m, sock);
+			print(m, sock);
 
 			if (m.isCommand) {
 				await this.pluginManager.enqueueCommand(sock, m);
@@ -54,4 +54,4 @@ class MessageProcessor {
 	}
 }
 
-export default MessageProcessor;
+export default Message;

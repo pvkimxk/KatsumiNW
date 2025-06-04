@@ -1,7 +1,7 @@
-import WhatsAppBot from "./core/connect.js";
+import Connect from "./core/connect.js";
 import print from "./lib/print.js";
 
-const bot = new WhatsAppBot();
+const bot = new Connect();
 
 try {
 	await bot.start();

@@ -22,7 +22,6 @@ export default {
 	 */
 	async execute(m) {
 		const startTime = process.hrtime.bigint();
-		await m.reply("Pong!");
 		const endTime = process.hrtime.bigint();
 		const latency = (endTime - startTime) / BigInt(1_000_000);
 		await m.reply(`Latency: ${latency}ms`);
