@@ -403,15 +403,8 @@ class PluginManager {
 				`⚡ Executing: ${plugin.name} by ${m.pushName} [${m.sender}]`
 			);
 
-			const fn = plugin.execute;
-
-			if (fn.length === 1) {
-				await fn(m);
-			} else if (fn.length === 2) {
-				await fn(m, params);
-			} else {
-				await fn(params);
-			}
+			// Always pass the params object
+			await plugin.execute(params);
 
 			if (plugin.cooldown > 0) {
 				this.cooldowns.set(

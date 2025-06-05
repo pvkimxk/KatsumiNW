@@ -25,4 +25,5 @@ export const BOT_CONFIG = {
 				jid.includes("@") ? jid : `${jid}@s.whatsapp.net`
 			)
 		: [],
+	allowExperimental: process.env.BOT_ALLOW_EXPERIMENTAL === "true",
 };

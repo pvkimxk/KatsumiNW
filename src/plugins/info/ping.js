@@ -20,10 +20,18 @@ export default {
 	 * @param {import('baileys').WASocket} sock - The Baileys socket object.
 	 * @param {object} m - The serialized message object.
 	 */
-	async execute(m) {
-		const startTime = process.hrtime.bigint();
-		const endTime = process.hrtime.bigint();
-		const latency = (endTime - startTime) / BigInt(1_000_000);
-		await m.reply(`Latency: ${latency}ms`);
+	async execute({ m, sock }) {
+		const start = Date.now();
+		const reply = await m.reply("Pinging...");
+		const latency = Date.now() - start;
+
+		await sock.sendMessage(
+			m.from,
+			{
+				edit: reply.key,
+				text: `Pong! Latency: ${latency}ms`,
+			},
+			{ ephemeralExpiration: m.expiration }
+		);
 	},
 };

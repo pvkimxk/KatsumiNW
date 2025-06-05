@@ -2,6 +2,7 @@ import {
 	Browsers,
 	DisconnectReason,
 	fetchLatestBaileysVersion,
+	jidNormalizedUser,
 	makeCacheableSignalKeyStore,
 	makeWASocket,
 } from "baileys";
@@ -13,25 +14,14 @@ import { BOT_CONFIG, MYSQL_CONFIG } from "../config/index.js";
 import logger from "../lib/logger.js";
 import PluginManager from "../lib/plugins.js";
 import print from "../lib/print.js";
+import { Client } from "../lib/serialize.js";
+import Store from "../lib/store.js";
 import Message from "./message.js";
 
 const rl = readline.createInterface({
 	input: process.stdin,
 	output: process.stdout,
 });
-
-/**
- * User for input.
- * @param {string} query The question to ask the user.
- * @returns {Promise<string>} A promise that resolves with the user's input.
- */
-function askQuestion(query) {
-	return new Promise((resolve) =>
-		rl.question(query, (ans) => {
-			resolve(ans);
-		})
-	);
-}
 
 /**
  * Main class to manage the WhatsApp bot connection and events.
@@ -45,10 +35,12 @@ class Connect {
 			checkperiod: 120,
 		});
 		this.pluginManager = new PluginManager(BOT_CONFIG);
+		this.store = new Store(this.sessionName);
 		this.message = new Message(
 			this.pluginManager,
 			BOT_CONFIG,
-			this.groupMetadataCache
+			this.groupMetadataCache,
+			this.store
 		);
 	}
 
@@ -58,19 +50,9 @@ class Connect {
 	async start() {
 		print.info(`Starting WhatsApp Bot session: ${this.sessionName}`);
 
-		const { error, version } = await fetchLatestBaileysVersion();
-		if (error) {
-			print.error(
-				`Failed to fetch latest Baileys version: ${error.message}. Retrying in 5 seconds...`,
-				error
-			);
-			await new Promise((resolve) => setTimeout(resolve, 5000));
-			return this.start();
-		}
-		print.info(`Baileys version: ${version.join(".")}`);
-
-		await this.pluginManager.loadPlugins();
-		this.pluginManager.watchPlugins();
+		// Initialize store
+		await this.store.load();
+		this.store.savePeriodically();
 
 		const { state, saveCreds, removeCreds } = await useMySQLAuthState({
 			...MYSQL_CONFIG,
@@ -85,6 +67,12 @@ class Connect {
 			usePairingCode = loginChoice.trim() === "2";
 		}
 
+		const { version } = await fetchLatestBaileysVersion();
+		print.info(`Baileys version: ${version.join(".")}`);
+
+		await this.pluginManager.loadPlugins();
+		this.pluginManager.watchPlugins();
+
 		this.sock = makeWASocket({
 			auth: {
 				creds: state.creds,
@@ -92,31 +80,62 @@ class Connect {
 			},
 			version,
 			logger,
-			cachedGroupMetadata: async (jid) => {
-				let metadata = this.groupMetadataCache.get(jid);
-				if (!metadata) {
-					try {
-						metadata = await this.sock.groupMetadata(jid);
-						this.groupMetadataCache.set(jid, metadata);
-						print.debug(`Cached metadata for group: ${jid}`);
-					} catch (e) {
-						print.error(
-							`Failed to fetch group metadata for ${jid}:`,
-							e
-						);
-					}
-				}
-				return metadata;
+			getMessage: async (key) => {
+				const jid = jidNormalizedUser(key.remoteJid);
+				const msg = await Store.loadMessage(jid, key.id);
+
+				return msg?.message || "";
 			},
-			defaultQueryTimeoutMs: undefined,
+			getGroupMetadata: async (jid) => {
+				const normalizedJid = jidNormalizedUser(jid);
+				// Check cache first
+				let metadata = this.groupMetadataCache.get(normalizedJid);
+				if (metadata) {
+					return metadata;
+				}
+				// Check store
+				metadata = this.store.getGroupMetadata(normalizedJid);
+				if (metadata) {
+					this.groupMetadataCache.set(normalizedJid, metadata);
+					return metadata;
+				}
+				// Fetch from server if not found
+				try {
+					metadata = await this.sock.groupMetadata(jid);
+					this.groupMetadataCache.set(normalizedJid, metadata);
+					this.store.setGroupMetadata(normalizedJid, metadata);
+					print.debug(`Cached metadata for group: ${jid}`);
+					return metadata;
+				} catch (e) {
+					print.error(
+						`Failed to fetch group metadata for ${jid}:`,
+						e
+					);
+					return null;
+				}
+			},
 			browser: Browsers.macOS("Safari"),
 			generateHighQualityLinkPreview: true,
 			qrTimeout: usePairingCode ? undefined : 60000,
 		});
 
+		this.sock = Client({ sock: this.sock, store: this.store });
+
 		// --- Event Handlers ---
 
 		this.sock.ev.on("creds.update", saveCreds);
+
+		this.sock.ev.on("contacts.update", (update) => {
+			this.store.updateContacts(update);
+		});
+
+		this.sock.ev.on("contacts.upsert", (update) => {
+			this.store.upsertContacts(update);
+		});
+
+		this.sock.ev.on("groups.update", (updates) => {
+			this.store.updateGroupMetadata(updates);
+		});
 
 		// Handle connection status
 		this.sock.ev.on("connection.update", async (update) => {
@@ -179,8 +198,9 @@ class Connect {
 				}
 
 				if (shouldReconnect) {
-					this.start();
+					setTimeout(() => this.start(), 3000);
 				} else {
+					this.store.stopSaving();
 					rl.close();
 					process.exit(1);
 				}
@@ -196,8 +216,8 @@ class Connect {
 			this.message.process(this.sock, data)
 		);
 
-		this.sock.ev.on("chats.update", (_chats) => {
-			// print.debug('Chats updated:', chats); // Enable if want to see this log
+		this.sock.ev.on("chats.update", () => {
+			// Enable if needed
 		});
 
 		this.sock.ev.on(
@@ -206,23 +226,85 @@ class Connect {
 				print.info(
 					`Group participants updated for ${id}: ${action} ${participants.join(", ")}`
 				);
-				try {
-					const metadata = await this.sock.groupMetadata(id);
-					this.groupMetadataCache.set(id, metadata);
-					print.debug(
-						`Updated group metadata cache for ${id} due to participant change.`
-					);
-				} catch (e) {
-					print.error(
-						`Failed to update group metadata for ${id} on participant change:`,
-						e
-					);
+
+				const normalizedJid = jidNormalizedUser(id);
+				let metadata =
+					this.groupMetadataCache.get(normalizedJid) ||
+					this.store.getGroupMetadata(normalizedJid);
+
+				if (!metadata) {
+					try {
+						metadata = await this.sock.groupMetadata(id);
+					} catch (e) {
+						print.error(`Failed to fetch metadata for ${id}:`, e);
+						return;
+					}
 				}
+
+				// Update participants
+				const normalizedParticipants =
+					participants.map(jidNormalizedUser);
+				switch (action) {
+					case "add":
+						metadata.participants.push(
+							...normalizedParticipants.map((id) => ({
+								id,
+								admin: null,
+							}))
+						);
+						break;
+					case "promote":
+						metadata.participants.forEach((p) => {
+							if (
+								normalizedParticipants.includes(
+									jidNormalizedUser(p.id)
+								)
+							) {
+								p.admin = "admin";
+							}
+						});
+						break;
+					case "demote":
+						metadata.participants.forEach((p) => {
+							if (
+								normalizedParticipants.includes(
+									jidNormalizedUser(p.id)
+								)
+							) {
+								p.admin = null;
+							}
+						});
+						break;
+					case "remove":
+						metadata.participants = metadata.participants.filter(
+							(p) =>
+								!normalizedParticipants.includes(
+									jidNormalizedUser(p.id)
+								)
+						);
+						break;
+				}
+
+				// Update caches
+				this.groupMetadataCache.set(normalizedJid, metadata);
+				this.store.setGroupMetadata(normalizedJid, metadata);
+				print.debug(`Updated group metadata cache for ${id}`);
 			}
 		);
-
-		// Add other event handlers as needed
 	}
+}
+
+/**
+ * User for input.
+ * @param {string} query The question to ask the user.
+ * @returns {Promise<string>} A promise that resolves with the user's input.
+ */
+function askQuestion(query) {
+	return new Promise((resolve) =>
+		rl.question(query, (ans) => {
+			resolve(ans);
+		})
+	);
 }
 
 export default Connect;
