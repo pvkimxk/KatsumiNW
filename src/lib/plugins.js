@@ -184,7 +184,8 @@ class PluginManager {
 
 		try {
 			if (!plugin) {
-				// await this.handleUnknownCommand(m, sock);
+				// We no longer handle unknown commands here.
+				// The prefix.js determines if it's a command.
 				return this.continueQueue(senderJid);
 			}
 
@@ -213,14 +214,6 @@ class PluginManager {
 	continueQueue(senderJid) {
 		setImmediate(() => this.processQueue(senderJid));
 	}
-
-	// async handleUnknownCommand(m) {
-	// 	print.warn(`🤷 Unknown command: ${m.command} from ${m.sender}`);
-	// 	await m.reply(
-	// 		`❌ Unrecognized command: *${m.prefix}${m.command}*\n` +
-	// 			`Use *${this.botConfig.prefixes[0]}help* for available commands`
-	// 	);
-	// }
 
 	async checkCooldown(plugin, m, sock) {
 		if (plugin.cooldown <= 0) {
@@ -266,13 +259,12 @@ class PluginManager {
 	}
 
 	async checkPermissions(plugin, m, sock) {
-		const sender = m.sender;
-		const isOwner = this.botConfig.ownerJids.includes(sender);
+		const isOwner = m.isOwner;
 
 		let isGroupAdmin = false;
 		if (m.isGroup && m.metadata?.participants) {
 			const participant = m.metadata.participants.find(
-				(p) => p.id === sender
+				(p) => p.id === m.sender
 			);
 			isGroupAdmin =
 				participant?.admin === "admin" ||
@@ -295,7 +287,7 @@ class PluginManager {
 			return true;
 		}
 
-		if (plugin.botAdmin && m.isGroup && !m.metadata?.botAdmin) {
+		if (plugin.botAdmin && m.isGroup && !m.isBotAdmin) {
 			await m.reply("🤖 Bot needs admin privileges");
 			if (plugin.react) {
 				await this.sendReaction(sock, m, "❌");
@@ -316,7 +308,7 @@ class PluginManager {
 		const requiresQuoted = plugin.usage.toLowerCase().includes("quoted");
 
 		if (
-			(hasRequiredArgs && !args && !m.isQuoted) ||
+			(hasRequiredArgs && !args.length && !m.isQuoted) || // Check args.length for actual arguments
 			(requiresQuoted && !m.isQuoted)
 		) {
 			const usage = plugin.usage
@@ -396,6 +388,7 @@ class PluginManager {
 			plugins: this.plugins,
 			command: m.command,
 			prefix: m.prefix,
+			isOwner: m.isOwner, // Pass isOwner to plugin context
 		};
 
 		try {

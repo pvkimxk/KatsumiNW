@@ -19,7 +19,7 @@ const log = (type, message, error = null) => {
  * @param {object} m - The serialized message object.
  * @param {import('baileys').WASocket} sock - The Baileys socket object.
  */
-export const print = async (m, sock) => {
+export const print = async (m, store) => {
 	if (!m || m.messageTimestamp === undefined || m.messageTimestamp === null) {
 		log("DEBUG", "Skipping print due to missing message timestamp.");
 		return;
@@ -30,13 +30,10 @@ export const print = async (m, sock) => {
 		let chatName = "Private Chat";
 
 		if (m.isGroup) {
-			// Use metadata from message if available
 			if (m.metadata) {
 				chatName = m.metadata.subject || `Group: ${m.from}`;
-			}
-			// Otherwise try to get from store/cache
-			else if (sock.store) {
-				const metadata = sock.store.getGroupMetadata(m.from);
+			} else if (store) {
+				const metadata = store.getGroupMetadata(m.from);
 				if (metadata) {
 					chatName = metadata.subject || `Group: ${m.from}`;
 				}

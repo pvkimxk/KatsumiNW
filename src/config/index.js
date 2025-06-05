@@ -20,10 +20,9 @@ export const BOT_CONFIG = {
 	prefixes: process.env.BOT_PREFIXES
 		? process.env.BOT_PREFIXES.split(",")
 		: ["!", ".", "#"],
-	ownerJids: process.env.BOT_OWNER_JIDS
-		? process.env.BOT_OWNER_JIDS.split(",").map((jid) =>
-				jid.includes("@") ? jid : `${jid}@s.whatsapp.net`
-			)
-		: [],
+
+	ownerJids: process.env.OWNER_JIDS
+		? JSON.parse(process.env.OWNER_JIDS)
+		: ["6285175106460"],
 	allowExperimental: process.env.BOT_ALLOW_EXPERIMENTAL === "true",
 };

@@ -1,6 +1,6 @@
 import axios from "axios";
 import { fileTypeFromBuffer } from "file-type";
-import Jimp from "jimp";
+import * as Jimp from "jimp";
 import { existsSync, promises, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 

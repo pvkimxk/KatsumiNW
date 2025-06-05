@@ -1,84 +1,93 @@
-import { BOT_CONFIG } from "../../config/index.js";
-
 export default {
 	name: "help",
 	description: "Show help information",
 	command: ["help", "h"],
 	permissions: "all",
 	hidden: false,
-	failed: "❌ Failed to show help: %error",
+	failed: "❌ Failed to show %command: %error",
 	category: "info",
 	cooldown: 5,
 	usage: "$prefix$command [command|category]",
 	react: true,
+	wait: null,
 
 	/**
 	 * @param {object} context - The context object containing sock, m, args, and plugins.
 	 * @param {object} context.m - The serialized message object.
 	 * @param {Array<object>} context.plugins - List of all loaded plugins (provided by PluginManager).
+	 * @param {boolean} context.isOwner - Indicates if the sender is an owner.
 	 */
-	async execute({ m, plugins }) {
-		const args = m.args;
-		const prefix = m.prefix || BOT_CONFIG.prefixes[0];
-		const allPlugins = plugins.filter((p) => !p.hidden);
+	async execute({ m, plugins, isOwner }) {
+		const categories = new Map();
 
-		const categories = {};
-		allPlugins.forEach((plugin) => {
-			if (!categories[plugin.category]) {
-				categories[plugin.category] = [];
+		for (const plugin of plugins) {
+			if (plugin.hidden || (plugin.owner && !isOwner)) {
+				continue;
 			}
-			categories[plugin.category].push(plugin);
-		});
-
-		if (!args.length) {
-			let helpMessage = `*Prefixes:* ${BOT_CONFIG.prefixes.join(", ")}\n`;
-			helpMessage += `*Total Commands:* ${allPlugins.length}\n\n`;
-			helpMessage += "*Available Categories:*\n";
-
-			Object.entries(categories).forEach(([category, plugins]) => {
-				helpMessage += `- *${category}* (${plugins.length} Commands)\n`;
-			});
-
-			await m.reply(helpMessage);
-			return;
+			if (!categories.has(plugin.category)) {
+				categories.set(plugin.category, []);
+			}
+			categories.get(plugin.category).push(plugin);
 		}
 
-		const input = args.join(" ").toLowerCase();
+		let response = "📚 *Available Commands:*\n\n";
 
-		if (categories[input]) {
-			const pluginsInCategory = categories[input];
-			let categoryMessage = `*${input} Commands:*\n\n`;
-			pluginsInCategory.forEach((plugin, index) => {
-				categoryMessage += `${index + 1}. *${plugin.command[0]}* - ${plugin.description}\n`;
-			});
-			await m.reply(categoryMessage);
-			return;
+		if (m.args.length === 0) {
+			for (const [category, cmds] of categories.entries()) {
+				response += `--- ${category.toUpperCase()} ---\n`;
+				for (const cmd of cmds) {
+					response += `\`${cmd.command.join(", ")}\`: ${cmd.description}\n`;
+				}
+				response += "\n";
+			}
+			response += `\n💡 Use \`${m.prefix}help <command|category>\` for more details.`;
+		} else {
+			const query = m.args[0].toLowerCase();
+			const plugin = plugins.find((p) =>
+				p.command.some((cmd) => cmd.toLowerCase() === query)
+			);
+
+			if (plugin && !plugin.hidden && (!plugin.owner || isOwner)) {
+				response = `--- Command: ${plugin.name} ---\n`;
+				response += `Description: ${plugin.description}\n`;
+				response += `Aliases: \`${plugin.command.join(", ")}\`\n`;
+				response += `Category: ${plugin.category}\n`;
+				if (plugin.usage) {
+					response += `Usage: \`${plugin.usage.replace("$prefix", m.prefix).replace("$command", plugin.command[0])}\`\n`;
+				}
+				if (plugin.cooldown > 0) {
+					response += `Cooldown: ${plugin.cooldown}s\n`;
+				}
+				if (plugin.dailyLimit > 0) {
+					response += `Daily Limit: ${plugin.dailyLimit}\n`;
+				}
+				if (plugin.permissions !== "all") {
+					response += `Permissions: ${plugin.permissions}\n`;
+				}
+				if (plugin.group) {
+					response += "Group Only: Yes\n";
+				}
+				if (plugin.private) {
+					response += "Private Chat Only: Yes\n";
+				}
+				if (plugin.owner) {
+					response += "Owner Only: Yes\n";
+				}
+				if (plugin.botAdmin) {
+					response += "Bot Admin Required: Yes\n";
+				}
+			} else if (categories.has(query)) {
+				const categoryPlugins = categories.get(query);
+				response = `*--- ${query.toUpperCase()} Commands ---\n\n`;
+				for (const cmd of categoryPlugins) {
+					response += `\`${cmd.command.join(", ")}\`: ${cmd.description}\n`;
+				}
+			} else {
+				response = `❌ No command or category found for "${query}".\n\n`;
+				response += `💡 Use \`${m.prefix}help\` to see all available commands and categories.`;
+			}
 		}
 
-		const commandPlugin = allPlugins.find(
-			(plugin) =>
-				plugin.command.some((cmd) => cmd.toLowerCase() === input) ||
-				plugin.name.toLowerCase() === input
-		);
-
-		if (commandPlugin) {
-			const usage = commandPlugin.usage
-				.replace(/\$prefix/g, prefix)
-				.replace(/\$command/g, commandPlugin.command[0]);
-
-			let commandMessage = `*Command:* ${commandPlugin.name}\n`;
-			commandMessage += `*Description:* ${commandPlugin.description}\n`;
-			commandMessage += `*Aliases:* ${commandPlugin.command.join(", ")}\n`;
-			commandMessage += `*Category:* ${commandPlugin.category}\n`;
-			commandMessage += `*Cooldown:* ${commandPlugin.cooldown} seconds\n`;
-			commandMessage += `*Usage:* \`\`\`${usage}\`\`\`\n`;
-			commandMessage += `*Owner Only:* ${commandPlugin.owner ? "Yes" : "No"}`;
-
-			await m.reply(commandMessage);
-			return;
-		}
-		await m.reply(
-			`No command or category found for "${input}". Use *${prefix}help* to see available commands.`
-		);
+		await m.reply(response.trim());
 	},
 };

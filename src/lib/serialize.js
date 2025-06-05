@@ -15,7 +15,7 @@ import Crypto from "node:crypto";
 import { existsSync, promises } from "node:fs";
 import { join } from "node:path";
 import pino from "pino";
-import { BOT_CONFIG } from "../config/index.js";
+import { escapeRegExp, getFile } from "./functions.js";
 
 const randomId = (length = 16) => Crypto.randomBytes(length).toString("hex");
 
@@ -389,7 +389,7 @@ export function Client({ sock, store }) {
 	return client;
 }
 
-export default async function serialize(sock, msg, store, prefixes = []) {
+export default async function serialize(sock, msg, store) {
 	const m = {};
 
 	if (!msg.message) {
@@ -421,7 +421,9 @@ export default async function serialize(sock, msg, store, prefixes = []) {
 					: /^.{18}/.test(m.id)
 						? "desktop"
 						: "unknown";
-		m.isBot = m.id.startsWith("BAE5") || m.id.startsWith("HSK");
+		m.isBot =
+			(m.id.startsWith("BAE5") && m.id.length === 16) ||
+			(m.id.startsWith("B24E") && m.id.length === 20);
 		m.isGroup = m.from.endsWith("@g.us");
 		m.participant =
 			jidNormalizedUser(msg?.participant || m.key.participant) || false;
@@ -467,7 +469,11 @@ export default async function serialize(sock, msg, store, prefixes = []) {
 	}
 
 	m.pushName = msg.pushName;
-	m.isOwner = m.sender && BOT_CONFIG.ownerJids.includes(m.sender);
+	m.isOwner =
+		m.sender &&
+		JSON.parse(process.env.OWNER_JIDS).includes(
+			m.sender.replace(/\D+/g, "")
+		);
 
 	if (m.message) {
 		m.type = getContentType(m.message) || Object.keys(m.message)[0];
@@ -501,53 +507,26 @@ export default async function serialize(sock, msg, store, prefixes = []) {
 			m.msg?.name ||
 			"";
 
-		m.prefix = "";
-		m.plugins = [];
+		m.prefix = new RegExp("^[°•π÷×¶∆£¢€¥®™+✓=|/~!?@#%^&.©^]", "gi").test(
+			m.body
+		)
+			? m.body.match(
+					new RegExp("^[°•π÷×¶∆£¢€¥®™+✓=|/~!?@#%^&.©^]", "gi")
+				)[0]
+			: "";
+		m.command =
+			m.body &&
+			m.body.trim().replace(m.prefix, "").trim().split(/ +/).shift();
+		m.args =
+			m.body
+				.trim()
+				.replace(new RegExp("^" + escapeRegExp(m.prefix), "i"), "")
+				.replace(m.command, "")
+				.split(/ +/)
+				.filter((a) => a) || [];
+		m.text = m.args.join(" ").trim();
 		m.isCommand = false;
 
-		if (m.body) {
-			const isOwner = BOT_CONFIG.ownerJids.includes(m.sender);
-			let foundPrefix = false;
-
-			if (!isOwner) {
-				for (const prefix of prefixes) {
-					if (m.body.startsWith(prefix)) {
-						m.prefix = prefix;
-						foundPrefix = true;
-						break;
-					}
-				}
-
-				if (!foundPrefix) {
-					m.isCommand = false;
-					return m;
-				}
-			}
-
-			if (!m.isCommand) {
-				const regexPrefix = /^[°•π÷×¶∆£¢€¥®™+✓=|/~!?@#%^&.©^]/;
-				if (regexPrefix.test(m.body)) {
-					m.prefix = m.body.match(regexPrefix)[0];
-					m.isCommand = true;
-				}
-			}
-		}
-
-		m.command = m.body
-			.replace(m.prefix, "")
-			.trim()
-			.split(/\s+/)
-			.shift()
-			.toLowerCase();
-
-		m.args = m.body
-			.replace(m.prefix, "")
-			.replace(m.command, "")
-			.trim()
-			.split(/\s+/)
-			.filter((arg) => arg);
-
-		m.text = m.args.join(" ");
 		m.expiration = m.msg?.contextInfo?.expiration || 0;
 		m.timestamps = msg.messageTimestamp * 1000;
 		m.isMedia = !!m.msg?.mimetype || !!m.msg?.thumbnailDirectPath;
@@ -557,7 +536,6 @@ export default async function serialize(sock, msg, store, prefixes = []) {
 			m.isQuoted = true;
 			m.quoted = {};
 			m.quoted.message = parseMessage(m.msg.contextInfo.quotedMessage);
-
 			if (m.quoted.message) {
 				m.quoted.type =
 					getContentType(m.quoted.message) ||
@@ -579,9 +557,13 @@ export default async function serialize(sock, msg, store, prefixes = []) {
 					),
 					id: m.msg.contextInfo.stanzaId,
 				};
-				m.quoted.from = m.quoted.key.remoteJid;
+				m.quoted.from = /g\.us|status/.test(
+					m.msg?.contextInfo?.remoteJid
+				)
+					? m.quoted.key.participant
+					: m.quoted.key.remoteJid;
 				m.quoted.fromMe = m.quoted.key.fromMe;
-				m.quoted.id = m.quoted.key.id;
+				m.quoted.id = m.msg?.contextInfo?.stanzaId;
 				m.quoted.device = /^3A/.test(m.quoted.id)
 					? "ios"
 					: /^3E/.test(m.quoted.id)
@@ -591,9 +573,6 @@ export default async function serialize(sock, msg, store, prefixes = []) {
 							: /^.{18}/.test(m.quoted.id)
 								? "desktop"
 								: "unknown";
-				m.quoted.isBot =
-					m.quoted.id.startsWith("BAE5") ||
-					m.quoted.id.startsWith("HSK");
 				m.quoted.isGroup = m.quoted.from.endsWith("@g.us");
 				m.quoted.participant =
 					jidNormalizedUser(m.msg.contextInfo.participant) || false;
@@ -607,72 +586,76 @@ export default async function serialize(sock, msg, store, prefixes = []) {
 					) || []),
 				];
 				m.quoted.body =
-					m.quoted.msg?.text || m.quoted.msg?.caption || "";
-
-				// Handle quoted prefixes
-				m.quoted.prefix = "";
-				if (m.quoted.body) {
-					for (const prefix of prefixes) {
-						if (m.quoted.body.startsWith(prefix)) {
-							m.quoted.prefix = prefix;
-							break;
-						}
-					}
-
-					if (!m.quoted.prefix) {
-						const regexPrefix =
-							/^[°•π÷×¶∆£¢€¥®™+✓=|/~!?@#%^&.©^]/;
-						if (regexPrefix.test(m.quoted.body)) {
-							m.quoted.prefix =
-								m.quoted.body.match(regexPrefix)[0];
-						}
-					}
-				}
-
-				m.quoted.command = m.quoted.body
-					.replace(m.quoted.prefix, "")
+					m.quoted.msg?.text ||
+					m.quoted.msg?.caption ||
+					m.quoted?.message?.conversation ||
+					m.quoted.msg?.selectedButtonId ||
+					m.quoted.msg?.singleSelectReply?.selectedRowId ||
+					m.quoted.msg?.selectedId ||
+					m.quoted.msg?.contentText ||
+					m.quoted.msg?.selectedDisplayText ||
+					m.quoted.msg?.title ||
+					m.quoted?.msg?.name ||
+					"";
+				m.quoted.prefix = new RegExp(
+					"^[°•π÷×¶∆£¢€¥®™+✓=|/~!?@#%^&.©^]",
+					"gi"
+				).test(m.quoted.body)
+					? m.quoted.body.match(
+							new RegExp(
+								"^[°•π÷×¶∆£¢€¥®™+✓=|/~!?@#%^&.©^]",
+								"gi"
+							)
+						)[0]
+					: "";
+				m.quoted.command =
+					m.quoted.body &&
+					m.quoted.body
+						.replace(m.quoted.prefix, "")
+						.trim()
+						.split(/ +/)
+						.shift();
+				m.quoted.body
 					.trim()
-					.split(/\s+/)
-					.shift()
-					.toLowerCase();
-
-				m.quoted.args = m.quoted.body
-					.replace(m.quoted.prefix, "")
+					.replace(
+						new RegExp("^" + escapeRegExp(m.quoted.prefix), "i"),
+						""
+					)
 					.replace(m.quoted.command, "")
-					.trim()
-					.split(/\s+/)
-					.filter((arg) => arg);
+					.split(/ +/)
+					.filter((a) => a) || [];
+				m.quoted.text =
+					m.quoted.message?.conversation ||
+					m.quoted.message[m.quoted.type]?.text ||
+					m.quoted.message[m.quoted.type]?.description ||
+					m.quoted.message[m.quoted.type]?.caption ||
+					m.quoted.message[m.quoted.type]?.hydratedTemplate
+						?.hydratedContentText ||
+					"";
 
-				m.quoted.text = m.quoted.args.join(" ");
 				m.quoted.url =
 					(m.quoted.text.match(
 						/https?:\/\/(www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&//=]*)/gi
 					) || [])[0] || "";
 				m.quoted.isOwner =
 					m.quoted.sender &&
-					BOT_CONFIG.ownerJids.includes(m.quoted.sender);
+					JSON.parse(process.env.OWNER_JIDS).includes(
+						m.quoted.sender.replace(/\D+/g, "")
+					);
+				m.quoted.isBot = m.quoted.id
+					? (m.quoted.id.startsWith("BAE5") &&
+							m.quoted.id.length === 16) ||
+						(m.quoted.id.startsWith("3EB0") &&
+							m.quoted.id.length === 12) ||
+						(m.quoted.id.startsWith("3EB0") &&
+							m.quoted.id.length === 20) ||
+						(m.quoted.id.startsWith("B24E") &&
+							m.quoted.id.length === 20)
+					: false;
 			}
 		}
 	}
 
-	// m.reply = async (content, options = {}) => {
-	// 	try {
-	// 		if (typeof content === "string") {
-	// 			return await sock.sendMessage(
-	// 				m.from,
-	// 				{ text: content, ...options },
-	// 				{ quoted: m, ephemeralExpiration: m.expiration, ...options }
-	// 			);
-	// 		}
-	// 		return await sock.sendMessage(m.from, content, {
-	// 			quoted: m,
-	// 			ephemeralExpiration: m.expiration,
-	// 			...options,
-	// 		});
-	// 	} catch (error) {
-	// 		console.error("Failed to send reply:", error);
-	// 	}
-	// };
 	m.reply = async (content, options = {}) => {
 		let chatId = options?.from ? options.from : m.from;
 		let quoted = options?.quoted ? options.quoted : m;

@@ -1,3 +1,4 @@
+import { getPrefix } from "../lib/prefix.js";
 import { print } from "../lib/print.js";
 import serialize from "../lib/serialize.js";
 
@@ -7,13 +8,15 @@ import serialize from "../lib/serialize.js";
 class Message {
 	/**
 	 * @param {import('../lib/plugins.js').default} pluginManager - The plugin manager instance.
-	 * @param {object} botConfig - Bot configuration.
+	 * @param {string[]} ownerJids - An array of owner JIDs (raw numbers).
+	 * @param {string[]} prefixes - An array of bot prefixes.
 	 * @param {import('node-cache')} groupMetadataCache - Cache for group metadata.
 	 * @param {import('../lib/store.js')} store - Store instance.
 	 */
-	constructor(pluginManager, botConfig, groupMetadataCache, store) {
+	constructor(pluginManager, ownerJids, prefixes, groupMetadataCache, store) {
 		this.pluginManager = pluginManager;
-		this.botConfig = botConfig;
+		this.ownerJids = ownerJids;
+		this.prefixes = prefixes;
 		this.groupMetadataCache = groupMetadataCache;
 		this.store = store;
 	}
@@ -43,18 +46,24 @@ class Message {
 					msg.messageTimestamp = Date.now() / 1000;
 				}
 
-				const m = await serialize(
-					sock,
-					msg,
-					this.store,
-					this.botConfig.prefixes || []
-				);
+				const m = await serialize(sock, msg, this.store);
 
 				this.store.saveMessage(m.from, msg);
 
 				if (!m || !m.body) {
 					continue;
 				}
+
+				const { prefix, isCommand, command, args, text } = getPrefix(
+					m.body,
+					m.sender
+				);
+
+				m.prefix = prefix;
+				m.isCommand = isCommand;
+				m.command = command;
+				m.args = args;
+				m.text = text;
 
 				m.plugins = this.pluginManager.getPlugins() || [];
 

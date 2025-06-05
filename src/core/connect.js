@@ -38,7 +38,8 @@ class Connect {
 		this.store = new Store(this.sessionName);
 		this.message = new Message(
 			this.pluginManager,
-			BOT_CONFIG,
+			BOT_CONFIG.ownerJids,
+			BOT_CONFIG.prefixes,
 			this.groupMetadataCache,
 			this.store
 		);
@@ -50,7 +51,6 @@ class Connect {
 	async start() {
 		print.info(`Starting WhatsApp Bot session: ${this.sessionName}`);
 
-		// Initialize store
 		await this.store.load();
 		this.store.savePeriodically();
 
@@ -88,18 +88,15 @@ class Connect {
 			},
 			getGroupMetadata: async (jid) => {
 				const normalizedJid = jidNormalizedUser(jid);
-				// Check cache first
 				let metadata = this.groupMetadataCache.get(normalizedJid);
 				if (metadata) {
 					return metadata;
 				}
-				// Check store
 				metadata = this.store.getGroupMetadata(normalizedJid);
 				if (metadata) {
 					this.groupMetadataCache.set(normalizedJid, metadata);
 					return metadata;
 				}
-				// Fetch from server if not found
 				try {
 					metadata = await this.sock.groupMetadata(jid);
 					this.groupMetadataCache.set(normalizedJid, metadata);
@@ -285,7 +282,6 @@ class Connect {
 						break;
 				}
 
-				// Update caches
 				this.groupMetadataCache.set(normalizedJid, metadata);
 				this.store.setGroupMetadata(normalizedJid, metadata);
 				print.debug(`Updated group metadata cache for ${id}`);
