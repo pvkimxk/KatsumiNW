@@ -24,9 +24,15 @@ export default {
 		let response = "";
 
 		if (m.args.length === 0) {
+<<<<<<< HEAD
 			response += `Hello, @${m.sender.replace(/[^0-9]/g, "")}!\n`;
 			response += `Welcome to command center!\n\n`;
 			response += `🌟 *Available Commands:*\n`;
+=======
+			response += `\n🚀 *Hello, *@${m.sender.replace(/[^0-9]/g, "")}*!\n`;
+			response += "Your ultimate WhatsApp companion at your service!\n\n";
+			response += "✨ *Commands Categories:*\n";
+>>>>>>> 8e5e9ee22d7bfb2f9f959a201f0585cab7e924bf
 
 			for (const [category, cmds] of categories.entries()) {
 				const categoryName =
@@ -39,7 +45,11 @@ export default {
 							: "";
 					response += `│  •  *${m.prefix}${cmd.command[0]}*${aliases}\n`;
 				}
+<<<<<<< HEAD
 				response += `└────\n`;
+=======
+				response += "└───────────────\n";
+>>>>>>> 8e5e9ee22d7bfb2f9f959a201f0585cab7e924bf
 			}
 
 			response += `\n➤ _Tip: \`${m.prefix}help [command|category]\` for details._`;
@@ -66,11 +76,27 @@ export default {
 				if (plugin.permissions !== "all") {
 					response += `│  • *Required Role:* ${plugin.permissions}\n`;
 				}
+<<<<<<< HEAD
 				if (plugin.group) response += `│  • *Group Only*\n`;
 				if (plugin.private) response += `│  • *Private Chat Only*\n`;
 				if (plugin.owner) response += `│  • *Owner Only*\n`;
 				if (plugin.botAdmin) response += `│  • *Bot Admin Needed*\n`;
 				response += `╰─────────────\n\n✨ _Respect cooldown & enjoy!_`;
+=======
+				if (plugin.group) {
+					response += "• *Group Only:* Yes\n";
+				}
+				if (plugin.private) {
+					response += "• *Private Chat Only:* Yes\n";
+				}
+				if (plugin.owner) {
+					response += "• *Owner Only:* Yes\n";
+				}
+				if (plugin.botAdmin) {
+					response += "• *Bot Admin Needed:* Yes\n";
+				}
+				response += "\n_Remember to respect cooldowns and limits!_";
+>>>>>>> 8e5e9ee22d7bfb2f9f959a201f0585cab7e924bf
 			} else if (categories.has(query)) {
 				const categoryName =
 					query.charAt(0).toUpperCase() + query.slice(1);
@@ -85,7 +111,13 @@ export default {
 				}
 				response += `╰─────────────\n\n_Explore more: \`${m.prefix}help <command>\`_`;
 			} else {
+<<<<<<< HEAD
 				response = `╭── *Not Found*\n│\n│  🙁 Sorry, *${query}* not found.\n│\n│  _Type:_ \`${m.prefix}help\` _to see all commands._\n╰─────────────`;
+=======
+				response = `\n🤔 *Oops!* Couldn't find a command or category for "*${query}*".\n`;
+				response += `\n💡 Try \`${m.prefix}help\` to see a list of all available commands and categories.\n`;
+				response += "Or double-check your spelling!";
+>>>>>>> 8e5e9ee22d7bfb2f9f959a201f0585cab7e924bf
 			}
 		}
 
