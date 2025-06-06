@@ -184,8 +184,6 @@ class PluginManager {
 
 		try {
 			if (!plugin) {
-				// We no longer handle unknown commands here.
-				// The prefix.js determines if it's a command.
 				return this.continueQueue(senderJid);
 			}
 
@@ -215,7 +213,7 @@ class PluginManager {
 		setImmediate(() => this.processQueue(senderJid));
 	}
 
-	async checkCooldown(plugin, m, sock) {
+	async checkCooldown(plugin, m) {
 		if (plugin.cooldown <= 0) {
 			return false;
 		}
@@ -230,14 +228,14 @@ class PluginManager {
 			);
 
 			if (plugin.react) {
-				await this.sendReaction(sock, m, "⏳");
+				await m.react("⏳");
 			}
 			return true;
 		}
 		return false;
 	}
 
-	async checkEnvironment(plugin, m, sock) {
+	async checkEnvironment(plugin, m) {
 		let error = null;
 
 		if (plugin.group && !m.isGroup) {
@@ -251,14 +249,14 @@ class PluginManager {
 		if (error) {
 			await m.reply(error);
 			if (plugin.react) {
-				await this.sendReaction(sock, m, "❌");
+				await m.react("❌");
 			}
 			return true;
 		}
 		return false;
 	}
 
-	async checkPermissions(plugin, m, sock) {
+	async checkPermissions(plugin, m) {
 		const isOwner = m.isOwner;
 
 		let isGroupAdmin = false;
@@ -274,7 +272,7 @@ class PluginManager {
 		if (plugin.owner && !isOwner) {
 			await m.reply("🔒 Owner-only command");
 			if (plugin.react) {
-				await this.sendReaction(sock, m, "❌");
+				await m.react("❌");
 			}
 			return true;
 		}
@@ -282,7 +280,7 @@ class PluginManager {
 		if (plugin.permissions === "admin" && !isGroupAdmin && !isOwner) {
 			await m.reply("👮‍♂️ Admin-only command");
 			if (plugin.react) {
-				await this.sendReaction(sock, m, "❌");
+				await m.react("❌");
 			}
 			return true;
 		}
@@ -290,7 +288,7 @@ class PluginManager {
 		if (plugin.botAdmin && m.isGroup && !m.isBotAdmin) {
 			await m.reply("🤖 Bot needs admin privileges");
 			if (plugin.react) {
-				await this.sendReaction(sock, m, "❌");
+				await m.react("❌");
 			}
 			return true;
 		}
@@ -298,7 +296,7 @@ class PluginManager {
 		return false;
 	}
 
-	async checkUsage(plugin, m, sock) {
+	async checkUsage(plugin, m) {
 		if (!plugin.usage) {
 			return false;
 		}
@@ -308,7 +306,7 @@ class PluginManager {
 		const requiresQuoted = plugin.usage.toLowerCase().includes("quoted");
 
 		if (
-			(hasRequiredArgs && !args.length && !m.isQuoted) || // Check args.length for actual arguments
+			(hasRequiredArgs && !args.length && !m.isQuoted) ||
 			(requiresQuoted && !m.isQuoted)
 		) {
 			const usage = plugin.usage
@@ -317,7 +315,7 @@ class PluginManager {
 
 			await m.reply(`📝 Usage:\n\`\`\`${usage}\`\`\``);
 			if (plugin.react) {
-				await this.sendReaction(sock, m, "ℹ️");
+				await m.react("ℹ️");
 			}
 
 			return true;
@@ -325,7 +323,7 @@ class PluginManager {
 		return false;
 	}
 
-	async checkDailyLimit(plugin, m, sock) {
+	async checkDailyLimit(plugin, m) {
 		if (!plugin.dailyLimit || plugin.dailyLimit <= 0) {
 			return false;
 		}
@@ -339,7 +337,7 @@ class PluginManager {
 					`Resets in ${this.getResetTime()}`
 			);
 			if (plugin.react) {
-				await this.sendReaction(sock, m, "🚫");
+				await m.react("🚫");
 			}
 			return true;
 		}
@@ -359,22 +357,12 @@ class PluginManager {
 		});
 	}
 
-	async sendPreExecutionActions(plugin, m, sock) {
+	async sendPreExecutionActions(plugin, m) {
 		if (plugin.wait) {
 			await m.reply(plugin.wait);
 		}
 		if (plugin.react) {
-			await this.sendReaction(sock, m, "🔄");
-		}
-	}
-
-	async sendReaction(sock, m, emoji) {
-		try {
-			await sock.sendMessage(m.from, {
-				react: { text: emoji, key: m.key },
-			});
-		} catch (error) {
-			print.warn("Failed to send reaction:", error);
+			await m.react("🔄");
 		}
 	}
 
@@ -388,7 +376,7 @@ class PluginManager {
 			plugins: this.plugins,
 			command: m.command,
 			prefix: m.prefix,
-			isOwner: m.isOwner, // Pass isOwner to plugin context
+			isOwner: m.isOwner,
 		};
 
 		try {
@@ -396,7 +384,6 @@ class PluginManager {
 				`⚡ Executing: ${plugin.name} by ${m.pushName} [${m.sender}]`
 			);
 
-			// Always pass the params object
 			await plugin.execute(params);
 
 			if (plugin.cooldown > 0) {
@@ -407,7 +394,7 @@ class PluginManager {
 				);
 			}
 			if (plugin.react) {
-				await this.sendReaction(sock, m, "✅");
+				await m.react("✅");
 			}
 
 			const duration = Date.now() - startTime;
@@ -423,7 +410,7 @@ class PluginManager {
 			await m.reply(errorMessage);
 
 			if (plugin.react) {
-				await this.sendReaction(sock, m, "❌");
+				await m.react("❌");
 			}
 		}
 	}

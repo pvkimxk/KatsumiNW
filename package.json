@@ -23,6 +23,7 @@
 	"dependencies": {
 		"baileys": "github:nstar-y/bail",
 		"file-type": "^21.0.0",
+		"mongodb": "^6.17.0",
 		"mysql-baileys": "github:bobslavtriev/mysql-baileys",
 		"node-cache": "^5.1.2",
 		"qrcode": "^1.5.4"

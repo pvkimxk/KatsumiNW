@@ -11,7 +11,7 @@ class Message {
 	 * @param {string[]} ownerJids - An array of owner JIDs (raw numbers).
 	 * @param {string[]} prefixes - An array of bot prefixes.
 	 * @param {import('node-cache')} groupMetadataCache - Cache for group metadata.
-	 * @param {import('../lib/store.js')} store - Store instance.
+	 * @param {import('../lib/store.local.js')} store - Store instance.
 	 */
 	constructor(pluginManager, ownerJids, prefixes, groupMetadataCache, store) {
 		this.pluginManager = pluginManager;

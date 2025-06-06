@@ -26,3 +26,8 @@ export const BOT_CONFIG = {
 		: ["6285175106460"],
 	allowExperimental: process.env.BOT_ALLOW_EXPERIMENTAL === "true",
 };
+
+export const MONGO_CONFIG = {
+	uri: process.env.MONGO_URI,
+	USE_MONGO: process.env.USE_MONGO === "true",
+};

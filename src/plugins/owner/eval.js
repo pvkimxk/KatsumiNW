@@ -6,7 +6,7 @@ export default {
 	command: ["=>", ">>"],
 	permissions: "owner",
 	hidden: false,
-	failed: "❌ Failed to execute %command: %error",
+	failed: "❌ Failed to execute $command: %error",
 	category: "owner",
 	cooldown: 0,
 	usage: ">> <code> or => <code>",
@@ -49,7 +49,7 @@ export default {
 				result = util.inspect(result, { depth: null, colors: false });
 			}
 
-			const finalResult = result?.toString()?.trim() || "undefined";
+			const finalResult = result?.toString()?.trim() || undefined;
 
 			await m.reply(finalResult);
 		} catch (error) {
