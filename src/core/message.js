@@ -72,6 +72,9 @@ class Message {
 				if (m.isCommand) {
 					await this.pluginManager.enqueueCommand(sock, m);
 				}
+
+				// TODO: make after execute handler
+				await this.pluginManager.handleAfterPlugins(m, sock);
 			} catch (error) {
 				console.error("Error processing message:", error);
 			}

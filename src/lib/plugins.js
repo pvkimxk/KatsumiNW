@@ -430,6 +430,22 @@ class PluginManager {
 			),
 		};
 	}
+
+	// TODO: make after execute
+	async handleAfterPlugins(m, sock) {
+		for (const plugin of this.plugins) {
+			if (typeof plugin.after === "function") {
+				try {
+					await plugin.after({ m, sock });
+				} catch (err) {
+					console.error(
+						`Error in after() of plugin "${plugin.name}":`,
+						err
+					);
+				}
+			}
+		}
+	}
 }
 
 export default PluginManager;
