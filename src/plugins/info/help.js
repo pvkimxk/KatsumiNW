@@ -34,8 +34,8 @@ export default {
 
 		if (m.args.length === 0) {
 			response += `\n🚀 *Hello, *@${m.sender.replace(/[^0-9]/g, "")}*!\n`;
-			response += `Your ultimate WhatsApp companion at your service!\n\n`;
-			response += `✨ *Commands Categories:*\n`;
+			response += "Your ultimate WhatsApp companion at your service!\n\n";
+			response += "✨ *Commands Categories:*\n";
 
 			for (const [category, cmds] of categories.entries()) {
 				const categoryName =
@@ -48,7 +48,7 @@ export default {
 							: "";
 					response += `│ • \`${m.prefix}${cmd.command[0]}\`${aliases}\n`;
 				}
-				response += `└───────────────\n`;
+				response += "└───────────────\n";
 			}
 
 			response += `\n💡 *Tip:* Use \`${m.prefix}help <command|category>\` for more details.`;
@@ -87,7 +87,7 @@ export default {
 				if (plugin.botAdmin) {
 					response += "• *Bot Admin Needed:* Yes\n";
 				}
-				response += `\n_Remember to respect cooldowns and limits!_`;
+				response += "\n_Remember to respect cooldowns and limits!_";
 			} else if (categories.has(query)) {
 				const categoryName =
 					query.charAt(0).toUpperCase() + query.slice(1);
@@ -104,7 +104,7 @@ export default {
 			} else {
 				response = `\n🤔 *Oops!* Couldn't find a command or category for "*${query}*".\n`;
 				response += `\n💡 Try \`${m.prefix}help\` to see a list of all available commands and categories.\n`;
-				response += `Or double-check your spelling!`;
+				response += "Or double-check your spelling!";
 			}
 		}
 

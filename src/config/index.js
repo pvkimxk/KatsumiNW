@@ -24,10 +24,15 @@ export const BOT_CONFIG = {
 	ownerJids: process.env.OWNER_JIDS
 		? JSON.parse(process.env.OWNER_JIDS)
 		: ["6285175106460"],
-	allowExperimental: process.env.BOT_ALLOW_EXPERIMENTAL === "true",
+	allowExperimental: process.env.BOT_ALLOW_EXPERIMENTAL,
 };
 
+/**
+ * MongoDB configuration.
+ * @type {object}
+ */
 export const MONGO_CONFIG = {
 	uri: process.env.MONGO_URI,
-	USE_MONGO: process.env.USE_MONGO === "true",
+	USE_MONGO: process.env.USE_MONGO,
+	auth: process.env.MONGO_AUTH_COLLECTION,
 };

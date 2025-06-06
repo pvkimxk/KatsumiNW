@@ -11,6 +11,7 @@ import NodeCache from "node-cache";
 import readline from "node:readline";
 import qrcode from "qrcode";
 import { BOT_CONFIG, MYSQL_CONFIG } from "../config/index.js";
+import { useMongoDbAuthState } from "../lib/auth/mongodb.js";
 import logger from "../lib/logger.js";
 import PluginManager from "../lib/plugins.js";
 import print from "../lib/print.js";
@@ -54,10 +55,24 @@ class Connect {
 		await this.store.load();
 		this.store.savePeriodically();
 
-		const { state, saveCreds, removeCreds } = await useMySQLAuthState({
-			...MYSQL_CONFIG,
-			session: this.sessionName,
-		});
+		const useMongoAuth = process.env.USE_MONGO_AUTH === "true";
+
+		let state, saveCreds, removeCreds;
+
+		if (useMongoAuth) {
+			const mongoUrl = process.env.MONGO_URI;
+			({ state, saveCreds, removeCreds } = await useMongoDbAuthState(
+				mongoUrl,
+				{ session: this.sessionName }
+			));
+			print.info("Auth store: MongoDB");
+		} else {
+			({ state, saveCreds, removeCreds } = await useMySQLAuthState({
+				...MYSQL_CONFIG,
+				session: this.sessionName,
+			}));
+			print.info("Auth store: MySQL");
+		}
 
 		let usePairingCode = false;
 		if (!state.creds.me) {
