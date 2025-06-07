@@ -119,23 +119,23 @@ export async function to_audio(mediaBuffer, ext = null) {
  * @throws Will throw an error if the input buffer is not valid or conversion fails.
  */
 export async function webpToVideo(buffer) {
-	return new Promise(async (resolve, reject) => {
-		if (!Buffer.isBuffer(buffer)) {
-			return reject(new Error("The buffer must be not empty"));
-		}
+	if (!Buffer.isBuffer(buffer)) {
+		throw new Error("The buffer must be not empty");
+	}
 
-		const { ext } = await fileTypeFromBuffer(buffer);
-		if (!/(webp)/i.test(ext)) {
-			return reject(new Error("Buffer not supported media"));
-		}
+	const { ext } = await fileTypeFromBuffer(buffer);
+	if (!/(webp)/i.test(ext)) {
+		throw new Error("Buffer not supported media");
+	}
 
-		const input = join(".", `${Date.now()}.${ext}`);
-		const gif = join(".", `${Date.now()}.gif`);
-		const output = join(".", `${Date.now()}.mp4`);
+	const input = join(".", `${Date.now()}.${ext}`);
+	const gif = join(".", `${Date.now()}.gif`);
+	const output = join(".", `${Date.now()}.mp4`);
 
-		writeFileSync(input, buffer);
+	writeFileSync(input, buffer);
 
-		exec(`convert ${input} ${gif}`, async (err) => {
+	return new Promise((resolve, reject) => {
+		exec(`convert ${input} ${gif}`, (err) => {
 			if (err) {
 				unlinkSync(input);
 				return reject(err);
@@ -143,7 +143,7 @@ export async function webpToVideo(buffer) {
 
 			exec(
 				`ffmpeg -i ${gif} -pix_fmt yuv420p -c:v libx264 -movflags +faststart -filter:v crop='floor(in_w/2)*2:floor(in_h/2)*2' ${output}`,
-				async (err) => {
+				(err) => {
 					if (err) {
 						unlinkSync(input);
 						unlinkSync(gif);

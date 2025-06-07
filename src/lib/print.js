@@ -49,7 +49,7 @@ export const print = async (m, store) => {
 			`[Body]: ${m.body ? m.body.substring(0, 100) + (m.body.length > 100 ? "..." : "") : "[Non-text message]"}`
 		);
 		if (m.isCommand) {
-			console.log(`[Command]: ${m.prefix}${m.command} (${m.args})`);
+			console.log(`[Command]: ${m.prefix}${m.command}`);
 		}
 		console.log("------------------------");
 	} catch (error) {

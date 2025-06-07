@@ -118,9 +118,8 @@ export default {
 						return m.reply(
 							"Failed to fetch random sticker after multiple attempts."
 						);
-					} else {
-						console.log("Retrying...");
 					}
+					console.log("Retrying...");
 				}
 			}
 			const sticker = await Sticker.create(buffer, {

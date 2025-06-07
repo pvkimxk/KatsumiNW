@@ -30,24 +30,19 @@ const randomId = (length = 16) => Crypto.randomBytes(length).toString("hex");
  */
 const downloadMedia = async (message, pathFile) => {
 	const type = Object.keys(message)[0];
-	try {
-		const stream = await downloadContentFromMessage(
-			message[type],
-			mimeMap[type]
-		);
-		const buffer = [];
-		for await (const chunk of stream) {
-			buffer.push(chunk);
-		}
-		if (pathFile) {
-			await promises.writeFile(pathFile, Buffer.concat(buffer));
-			return pathFile;
-		} else {
-			return Buffer.concat(buffer);
-		}
-	} catch (e) {
-		throw e;
+	const stream = await downloadContentFromMessage(
+		message[type],
+		mimeMap[type]
+	);
+	const buffer = [];
+	for await (const chunk of stream) {
+		buffer.push(chunk);
 	}
+	if (pathFile) {
+		await promises.writeFile(pathFile, Buffer.concat(buffer));
+		return pathFile;
+	}
+	return Buffer.concat(buffer);
 };
 
 // export const getContentType = (content) => {
@@ -488,9 +483,12 @@ export default async function serialize(sock, msg, store) {
 				}));
 
 			const normalizeJid = (jid) => {
-				if (!jid) return jid;
-				if (typeof sock.decodeJid === "function")
+				if (!jid) {
+					return jid;
+				}
+				if (typeof sock.decodeJid === "function") {
 					return sock.decodeJid(jid);
+				}
 				return jid.split(":")[0];
 			};
 

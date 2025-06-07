@@ -1,12 +1,13 @@
 import { SettingsModel } from "../../lib/database/index.js";
-import { SettingsSchema } from "../../lib/schema/index.js";
 
 export default {
 	name: "mode",
 	description: "Set bot operation mode: self / group / private / public",
-	command: ["mode"],
+	command: ["mode", "setting"],
+	category: "owner",
 	permissions: "owner",
 	wait: null,
+	owner: true,
 	usage: "$prefix$command [self|group|private|public]",
 	async execute({ m, args }) {
 		if (!args[0]) {

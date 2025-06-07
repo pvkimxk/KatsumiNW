@@ -32,15 +32,6 @@ class Provider {
 		}
 		return form;
 	}
-
-	/**
-	 * Upload a buffer to a provider
-	 * @param {Buffer} buffer - The buffer to upload
-	 * @returns {Promise<string>} The URL of the uploaded file
-	 */
-	async upload(buffer) {
-		throw new Error("Method 'upload' must be implemented");
-	}
 }
 
 /**

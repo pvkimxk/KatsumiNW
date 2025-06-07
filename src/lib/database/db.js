@@ -4,7 +4,9 @@ import { MONGO_CONFIG } from "../../config/index.js";
 let mongoClient = null;
 
 export async function getMongoClient() {
-	if (mongoClient && mongoClient.topology?.isConnected()) return mongoClient;
+	if (mongoClient && mongoClient.topology?.isConnected()) {
+		return mongoClient;
+	}
 	mongoClient = new MongoClient(MONGO_CONFIG.uri);
 	await mongoClient.connect();
 	return mongoClient;

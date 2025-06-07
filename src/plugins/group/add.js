@@ -4,7 +4,7 @@ import { getFile } from "../../lib/functions.js";
 export default {
 	name: "add",
 	description: "Adding member to group.",
-	command: ["add"],
+	command: ["add", "+"],
 	permissions: "admin",
 	hidden: false,
 	failed: "Failed to %command: %error",
