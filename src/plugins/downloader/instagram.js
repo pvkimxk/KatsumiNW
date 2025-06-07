@@ -1,3 +1,5 @@
+import { fileTypeFromBuffer } from "file-type";
+
 export default {
 	name: "instagram",
 	description: "Downloader Instagram.",
@@ -44,7 +46,7 @@ export default {
 		}
 
 		let caption = "*📸 INSTAGRAM DOWNLOADER*\n\n";
-		caption += `*👤 User*: @${result.meta?.username}\n`;
+		caption += `*👤 User*: @${result.meta?.username || "-"}\n`;
 		caption += `*📝 Caption*: ${result.meta?.title || "-"}\n`;
 		caption += `*👍 Like*: ${result.meta?.like_count || 0}\n`;
 		caption += `*🗓️ Upload*: ${result.meta?.taken_at ? new Date(result.meta.taken_at * 1000).toLocaleString("id-ID") : "-"}\n`;
@@ -63,14 +65,37 @@ export default {
 				caption += `and ${remainingComments} other comment${remainingComments > 1 ? "s" : ""}...\n`;
 			}
 		}
+
+		const getT = async (url) => {
+			const res = await fetch(url);
+			const arrayBuffer = await res.arrayBuffer();
+			const buffer = Buffer.from(arrayBuffer);
+			const fileType = await fileTypeFromBuffer(buffer);
+			const mime = fileType ? fileType.mime : "application/octet-stream";
+			return [
+				mime.includes("video")
+					? "video"
+					: mime.includes("audio")
+						? "audio"
+						: "image",
+				buffer,
+				mime,
+			];
+		};
+
 		if (Array.isArray(result.urls) && result.urls.length > 0) {
 			let isFirst = true;
 			for (const media of result.urls) {
-				const type = media.type === "mp4" ? "video" : "image";
+				const [type, downloadData] = await getT(media.url);
+				if (!type) {
+					return m.reply("Failed to retrieve the media type.");
+				}
+
 				const mediaMsg = {
-					[type]: { url: media.url },
-					...(isFirst && { caption }),
+					[type]: downloadData,
+					...(isFirst && { caption: caption.trim() }),
 				};
+
 				await m.reply(mediaMsg);
 				isFirst = false;
 			}
