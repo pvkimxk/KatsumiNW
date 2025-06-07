@@ -33,6 +33,6 @@ export const BOT_CONFIG = {
  */
 export const MONGO_CONFIG = {
 	uri: process.env.MONGO_URI,
-	USE_MONGO: process.env.USE_MONGO,
+	USE_MONGO: process.env.USE_MONGO === "true",
 	auth: process.env.MONGO_AUTH_COLLECTION,
 };

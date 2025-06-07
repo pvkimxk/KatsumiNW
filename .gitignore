@@ -135,4 +135,5 @@ dist
 baileys_*
 *logs*.txt
 database.json
-session*
+sessions*
+sessions/*

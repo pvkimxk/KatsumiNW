@@ -57,7 +57,7 @@ class Connect {
 
 		let state, saveCreds, removeCreds;
 
-		if (process.env.USE_MONGO_AUTH) {
+		if (process.env.USE_MONGO_AUTH === "true") {
 			const mongoUrl = process.env.MONGO_URI;
 			({ state, saveCreds, removeCreds } = await useMongoDbAuthState(
 				mongoUrl,
