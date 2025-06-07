@@ -1,3 +1,6 @@
+import os from "os";
+import { performance } from "perf_hooks";
+
 export default {
 	name: "ping",
 	description: "Displays bot response speed.",
@@ -20,18 +23,17 @@ export default {
 	 * @param {import('baileys').WASocket} sock - The Baileys socket object.
 	 * @param {object} m - The serialized message object.
 	 */
-	async execute({ m, sock }) {
-		const start = Date.now();
-		const reply = await m.reply("Pinging...");
-		const latency = Date.now() - start;
+	async execute({ m }) {
+		const old = performance.now();
+		const ram = (os.totalmem() / Math.pow(1024, 3)).toFixed(2) + " GB";
+		const free_ram = (os.freemem() / Math.pow(1024, 3)).toFixed(2) + " GB";
 
-		await sock.sendMessage(
-			m.from,
-			{
-				edit: reply.key,
-				text: `Pong! Latency: ${latency}ms`,
-			},
-			{ ephemeralExpiration: m.expiration }
-		);
+		m.reply(`\`\`\`Server Information
+
+- ${os.cpus().length} CPU: ${os.cpus()[0].model}
+
+- Uptime: ${Math.floor(os.uptime() / 86400)} days
+- Ram: ${free_ram}/${ram}
+- Speed: ${(performance.now() - old).toFixed(5)} ms\`\`\``);
 	},
 };

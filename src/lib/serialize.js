@@ -2,10 +2,12 @@ import {
 	STORIES_JID,
 	areJidsSameUser,
 	chatModificationToAppPatch,
+	downloadContentFromMessage,
 	downloadMediaMessage,
 	extractMessageContent,
 	generateWAMessage,
 	generateWAMessageFromContent,
+	getContentType,
 	jidDecode,
 	jidNormalizedUser,
 	proto,
@@ -16,23 +18,52 @@ import { existsSync, promises } from "node:fs";
 import { join } from "node:path";
 import pino from "pino";
 import { escapeRegExp, getFile } from "./functions.js";
+import { mimeMap } from "./media.js";
 
 const randomId = (length = 16) => Crypto.randomBytes(length).toString("hex");
 
-export const getContentType = (content) => {
-	if (content) {
-		const keys = Object.keys(content);
-		return keys.find(
-			(k) =>
-				(k === "conversation" ||
-					k.endsWith("Message") ||
-					k.includes("V2") ||
-					k.includes("V3")) &&
-				k !== "senderKeyDistributionMessage"
+/**
+ * Download the media from the message.
+ * @param {import("baileys").proto.IMessage} message - The message object.
+ * @param {string} type - The media type.
+ * @returns {Promise<Buffer>} - The media buffer.
+ */
+const downloadMedia = async (message, pathFile) => {
+	const type = Object.keys(message)[0];
+	try {
+		const stream = await downloadContentFromMessage(
+			message[type],
+			mimeMap[type]
 		);
+		const buffer = [];
+		for await (const chunk of stream) {
+			buffer.push(chunk);
+		}
+		if (pathFile) {
+			await promises.writeFile(pathFile, Buffer.concat(buffer));
+			return pathFile;
+		} else {
+			return Buffer.concat(buffer);
+		}
+	} catch (e) {
+		throw e;
 	}
-	return null;
 };
+
+// export const getContentType = (content) => {
+// 	if (content) {
+// 		const keys = Object.keys(content);
+// 		return keys.find(
+// 			(k) =>
+// 				(k === "conversation" ||
+// 					k.endsWith("Message") ||
+// 					k.includes("V2") ||
+// 					k.includes("V3")) &&
+// 				k !== "senderKeyDistributionMessage"
+// 		);
+// 	}
+// 	return null;
+// };
 
 function parseMessage(content) {
 	content = extractMessageContent(content);
@@ -456,9 +487,20 @@ export default async function serialize(sock, msg, store) {
 					admin: p.admin,
 				}));
 
-			m.isAdmin = m.groupAdmins.some((admin) => admin.id === m.sender);
+			const normalizeJid = (jid) => {
+				if (!jid) return jid;
+				if (typeof sock.decodeJid === "function")
+					return sock.decodeJid(jid);
+				return jid.split(":")[0];
+			};
+
+			const botJid = normalizeJid(sock.user.id);
+
+			m.isAdmin = m.groupAdmins.some(
+				(admin) => normalizeJid(admin.id) === normalizeJid(m.sender)
+			);
 			m.isBotAdmin = m.groupAdmins.some(
-				(admin) => admin.id === sock.user.id
+				(admin) => normalizeJid(admin.id) === botJid
 			);
 		} else {
 			m.metadata = null;
@@ -652,6 +694,9 @@ export default async function serialize(sock, msg, store) {
 						(m.quoted.id.startsWith("B24E") &&
 							m.quoted.id.length === 20)
 					: false;
+
+				m.quoted.download = (pathFile) =>
+					downloadMedia(m.quoted.message, pathFile);
 			}
 		}
 	}
@@ -754,6 +799,8 @@ export default async function serialize(sock, msg, store) {
 			console.error("Failed to delete message:", error);
 		}
 	};
+
+	m.download = (pathFile) => downloadMedia(m.message, pathFile);
 
 	return m;
 }

@@ -133,23 +133,16 @@ class Connect {
 
 		this.sock = Client({ sock: this.sock, store: this.store });
 
-		// --- Event Handlers ---
-
 		this.sock.ev.on("creds.update", saveCreds);
-
 		this.sock.ev.on("contacts.update", (update) => {
 			this.store.updateContacts(update);
 		});
-
 		this.sock.ev.on("contacts.upsert", (update) => {
 			this.store.upsertContacts(update);
 		});
-
 		this.sock.ev.on("groups.update", (updates) => {
 			this.store.updateGroupMetadata(updates);
 		});
-
-		// Handle connection status
 		this.sock.ev.on("connection.update", async (update) => {
 			const { connection, lastDisconnect, qr } = update;
 
@@ -228,10 +221,6 @@ class Connect {
 			this.message.process(this.sock, data)
 		);
 
-		this.sock.ev.on("chats.update", () => {
-			// Enable if needed
-		});
-
 		this.sock.ev.on(
 			"group-participants.update",
 			async ({ id, participants, action }) => {
@@ -253,7 +242,6 @@ class Connect {
 					}
 				}
 
-				// Update participants
 				const normalizedParticipants =
 					participants.map(jidNormalizedUser);
 				switch (action) {

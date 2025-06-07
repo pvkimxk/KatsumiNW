@@ -368,6 +368,26 @@ class PluginManager {
 
 	async executePlugin(plugin, sock, m) {
 		const startTime = Date.now();
+
+		const groupMetadata = m.metadata || {};
+		const participants = groupMetadata.participants || [];
+
+		const isAdmin =
+			m.isGroup &&
+			participants.some(
+				(p) =>
+					p.id === m.sender &&
+					(p.admin === "admin" || p.admin === "superadmin")
+			);
+
+		const isBotAdmin =
+			m.isGroup &&
+			participants.some(
+				(p) =>
+					p.id === sock.user.id &&
+					(p.admin === "admin" || p.admin === "superadmin")
+			);
+
 		const params = {
 			sock,
 			m,
@@ -377,6 +397,9 @@ class PluginManager {
 			command: m.command,
 			prefix: m.prefix,
 			isOwner: m.isOwner,
+			groupMetadata,
+			isAdmin,
+			isBotAdmin,
 		};
 
 		try {

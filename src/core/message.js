@@ -1,3 +1,4 @@
+import { SettingsModel } from "../lib/database/index.js";
 import { getPrefix } from "../lib/prefix.js";
 import { print } from "../lib/print.js";
 import serialize from "../lib/serialize.js";
@@ -31,6 +32,8 @@ class Message {
 			return;
 		}
 
+		const settings = await SettingsModel.getSettings();
+
 		for (const msg of messages) {
 			try {
 				if (
@@ -56,7 +59,7 @@ class Message {
 
 				const { prefix, isCommand, command, args, text } = getPrefix(
 					m.body,
-					m.sender
+					m
 				);
 
 				m.prefix = prefix;
@@ -68,6 +71,16 @@ class Message {
 				m.plugins = this.pluginManager.getPlugins() || [];
 
 				await print(m, sock);
+
+				if (settings.self && !m.isOwner) {
+					continue;
+				}
+				if (settings.groupOnly && !m.isGroup && !m.isOwner) {
+					continue;
+				}
+				if (settings.privateChatOnly && m.isGroup && !!m.isOwner) {
+					continue;
+				}
 
 				if (m.isCommand) {
 					await this.pluginManager.enqueueCommand(sock, m);
