@@ -2,6 +2,9 @@
 	"name": "basewa",
 	"version": "1.0.0",
 	"main": "src/main.js",
+	"engines": {
+		"node": ">=20.0.0"
+	},
 	"type": "module",
 	"scripts": {
 		"start": "node --env-file=.env src/main.js",
@@ -12,15 +15,15 @@
 	},
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/nat9h/base.git"
+		"url": "git+https://github.com/nat9h/Katsumi.git"
 	},
 	"author": "Natsumi",
 	"license": "MIT",
 	"bugs": {
-		"url": "https://github.com/nat9h/base/issues"
+		"url": "https://github.com/nat9h/Katsumi/issues"
 	},
-	"homepage": "https://github.com/nat9h/base#readme",
-	"description": "aja sendiri.",
+	"homepage": "https://github.com/nat9h/Katsumi#readme",
+	"description": "WhatsApp Bot using Baileys, MongoDB & MySQL.",
 	"keywords": [
 		"whatsapp-bot",
 		"bot-whatsapp",

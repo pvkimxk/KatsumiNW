@@ -55,11 +55,9 @@ class Connect {
 		await this.store.load();
 		this.store.savePeriodically();
 
-		const useMongoAuth = process.env.USE_MONGO_AUTH === "true";
-
 		let state, saveCreds, removeCreds;
 
-		if (useMongoAuth) {
+		if (process.env.USE_MONGO_AUTH) {
 			const mongoUrl = process.env.MONGO_URI;
 			({ state, saveCreds, removeCreds } = await useMongoDbAuthState(
 				mongoUrl,

@@ -2,7 +2,7 @@ export default {
 	apps: [
 		{
 			script: "src/main.js",
-			name: "Natsumi",
+			name: "Katsumi",
 			node_args: "--env-file .env",
 		},
 	],
