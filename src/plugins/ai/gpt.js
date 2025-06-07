@@ -21,7 +21,7 @@ export default {
 	 * @param {object} m - The serialized message object.
 	 */
 	async execute({ m }) {
-		let query = m.args;
+		let query = m.text;
 		if (m.quoted?.text.length > 0 && query.length > 0) {
 			query += "\n\n" + m.quoted.text;
 		} else if (query.length == 0 && m.quoted?.text.length > 0) {
