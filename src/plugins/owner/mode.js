@@ -6,10 +6,11 @@ export default {
 	description: "Set bot operation mode: self / group / private / public",
 	command: ["mode"],
 	permissions: "owner",
+	wait: null,
 	usage: "$prefix$command [self|group|private|public]",
 	async execute({ m, args }) {
 		if (!args[0]) {
-			const current = await SettingsSchema.getSettings();
+			const current = await SettingsModel.getSettings();
 			return m.reply(
 				`Current Bot Mode:\n- Self: ${current.self}\n- Group Only: ${current.groupOnly}\n- Private Only: ${current.privateChatOnly}\n\nUsage:\n${this.usage.replace("$prefix", m.prefix).replace("$command", this.command[0])}\n\nExample:\n${m.prefix}${this.command[0]} group`
 			);
