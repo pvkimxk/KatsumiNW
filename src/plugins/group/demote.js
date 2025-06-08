@@ -20,7 +20,7 @@ export default {
 	 * @param {import('baileys').WASocket} sock - The Baileys socket object.
 	 * @param {object} m - The serialized message object.
 	 */
-	async execute({ m, sock, groupMetadata }) {
+	async execute(m, { sock, groupMetadata }) {
 		const user = m?.quoted?.sender || m.mentions[0];
 		if (!user) {
 			return m.reply("Reply or tag a user");

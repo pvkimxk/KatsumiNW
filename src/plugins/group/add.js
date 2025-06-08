@@ -23,7 +23,7 @@ export default {
 	 * @param {import('baileys').WASocket} sock - The Baileys socket object.
 	 * @param {object} m - The serialized message object.
 	 */
-	async execute({ m, sock }) {
+	async execute(m, { sock }) {
 		const input = m.text
 			? m.text
 			: m.quoted

@@ -19,7 +19,7 @@ export default {
 	private: false,
 	owner: false,
 
-	async execute({ m, args, sock }) {
+	execute: async (m, { args, sock }) => {
 		let input = args.join(" ").trim();
 		let urlMedia = null;
 		let mediaBuffer = null;
@@ -28,9 +28,9 @@ export default {
 		let isMedia = false;
 		let q, mime;
 
-		if (m.mentions.length !== 0) {
+		if (m.mentions[0]) {
 			const pfpUrl = await sock
-				.profilePictureUrl(m.mentionedJid[0], "image")
+				.profilePictureUrl(m.mentions[0], "image")
 				.catch(
 					() =>
 						"https://i.pinimg.com/736x/f1/26/e3/f126e305c9a2ba39aba2b882584b2afd.jpg"

@@ -20,7 +20,7 @@ export default {
 	 * @param {import('baileys').WASocket} context.sock - The Baileys socket object.
 	 * @param {object} context.m - The serialized message object.
 	 */
-	async execute({ m, isOwner, text }) {
+	async execute(m, { isOwner, text }) {
 		if (!isOwner) {
 			await m.reply("🔒 This command is for owners only.");
 			return;

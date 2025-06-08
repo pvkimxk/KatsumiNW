@@ -16,7 +16,7 @@ export default {
 	private: false,
 	owner: false,
 
-	async execute({ m }) {
+	async execute(m, { api }) {
 		const input =
 			m.text && m.text.trim() !== ""
 				? m.text
@@ -28,15 +28,11 @@ export default {
 			return m.reply("Input URL TikTok.");
 		}
 
-		const response = await fetch(
-			"https://api.apigratis.tech/downloader/tiktok?url=" + input,
-			{
-				headers: {
-					Accept: "application/json",
-				},
-			}
-		);
-		const { result, status, message } = await response.json();
+		const { data } = await api.Gratis.get("/download/tiktok", {
+			url: input,
+		});
+
+		const { result, status, message } = data;
 
 		if (!status) {
 			return m.reply(message);

@@ -24,7 +24,7 @@ export default {
 	 * @param {string} context.command - The actual command triggered (e.g., ">>" or "=>").
 	 * @param {boolean} context.isOwner - Indicates if the sender is an owner.
 	 */
-	async execute({ m, text, command, isOwner }) {
+	async execute(m, { text, command, isOwner }) {
 		if (!isOwner) {
 			await m.reply("🔒 This command is for owners only.");
 			return;

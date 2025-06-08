@@ -2,6 +2,7 @@ import { readdirSync, watch } from "fs";
 import NodeCache from "node-cache";
 import { dirname, join } from "path";
 import { fileURLToPath, pathToFileURL } from "url";
+import { APIRequest as api } from "../utils/API/request.js";
 import print from "./print.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -52,6 +53,7 @@ class PluginManager {
 						}
 
 						this.configurePluginDefaults(plugin);
+						plugin.filePath = absolutePath;
 						this.plugins.push(plugin);
 
 						print.info(
@@ -400,6 +402,7 @@ class PluginManager {
 			groupMetadata,
 			isAdmin,
 			isBotAdmin,
+			api,
 		};
 
 		try {

@@ -18,7 +18,7 @@ export default {
 	private: false,
 	owner: false,
 
-	async execute({ m }) {
+	async execute(m, { api }) {
 		const input =
 			m.text && m.text.trim() !== ""
 				? m.text.trim()
@@ -30,16 +30,11 @@ export default {
 			return m.reply("Input URL Instagram.");
 		}
 
-		const response = await fetch(
-			"https://api.apigratis.tech/downloader/instagram?url=" + input,
-			{
-				headers: {
-					Accept: "application/json",
-				},
-			}
-		);
+		const { data } = await api.Gratis.get("/downloader/instagram", {
+			url: input,
+		});
 
-		const { result, status, message } = await response.json();
+		const { result, status, message } = data;
 
 		if (!status) {
 			return m.reply(message);

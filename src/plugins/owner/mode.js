@@ -9,7 +9,7 @@ export default {
 	wait: null,
 	owner: true,
 	usage: "$prefix$command [self|group|private|public]",
-	async execute({ m, args }) {
+	async execute(m, { args }) {
 		if (!args[0]) {
 			const current = await SettingsModel.getSettings();
 			return m.reply(
