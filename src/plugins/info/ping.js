@@ -23,7 +23,7 @@ export default {
 	 * @param {import('baileys').WASocket} sock - The Baileys socket object.
 	 * @param {object} m - The serialized message object.
 	 */
-	async execute({ m }) {
+	execute: async (m) => {
 		const old = performance.now();
 		const ram = (os.totalmem() / Math.pow(1024, 3)).toFixed(2) + " GB";
 		const free_ram = (os.freemem() / Math.pow(1024, 3)).toFixed(2) + " GB";

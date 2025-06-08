@@ -407,7 +407,12 @@ class PluginManager {
 				`⚡ Executing: ${plugin.name} by ${m.pushName} [${m.sender}]`
 			);
 
-			await plugin.execute(params);
+			if (plugin.execute.length === 1) {
+				await plugin.execute(m);
+			} else {
+				const { m, ...rest } = params;
+				await plugin.execute(m, rest);
+			}
 
 			if (plugin.cooldown > 0) {
 				this.cooldowns.set(

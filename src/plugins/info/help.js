@@ -11,7 +11,7 @@ export default {
 	react: true,
 	wait: null,
 
-	async execute({ m, plugins, isOwner, sock }) {
+	execute: async (m, { plugins, isOwner, sock }) => {
 		const categories = new Map();
 
 		for (const plugin of plugins) {
