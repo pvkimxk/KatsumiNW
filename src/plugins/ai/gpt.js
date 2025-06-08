@@ -20,7 +20,7 @@ export default {
 	 * @param {import('baileys').WASocket} sock - The Baileys socket object.
 	 * @param {object} m - The serialized message object.
 	 */
-	async execute(m, { api }) {
+	async execute(m) {
 		let query = m.text;
 		if (m.quoted?.text.length > 0 && query.length > 0) {
 			query += "\n\n" + m.quoted.text;
@@ -28,15 +28,28 @@ export default {
 			query = m.quoted.text;
 		}
 
-		const { data } = await api.Gratis.post("/gpt/chat", {
+		const payload = {
 			model: "gpt-4o-mini",
 			messages: [
 				{ role: "developer", content: "You are a helpful assistant." },
 				{ role: "user", content: query },
 			],
+		};
+
+		const response = await fetch("https://api.apigratis.tech/gpt/chat", {
+			method: "POST",
+			headers: {
+				accept: "application/json",
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify(payload),
 		});
 
-		const { status, message, result } = await data;
+		if (!response.ok) {
+			console.error(`Error: ${response.status}`);
+		}
+
+		const { status, message, result } = await response.json();
 
 		if (!status) {
 			return m.reply(message);

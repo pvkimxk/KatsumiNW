@@ -28,7 +28,7 @@ export default {
 			return m.reply("Input URL TikTok.");
 		}
 
-		const { data } = await api.Gratis.get("/download/tiktok", {
+		const { data } = await api.Gratis.get("/downloader/tiktok", {
 			url: input,
 		});
 

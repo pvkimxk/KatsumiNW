@@ -464,10 +464,27 @@ class PluginManager {
 
 	// TODO: make after execute
 	async handleAfterPlugins(m, sock) {
+		const params = {
+			sock,
+			text: m.text,
+			args: m.args,
+			plugins: this.plugins,
+			command: m.command,
+			prefix: m.prefix,
+			isOwner: m.isOwner,
+			groupMetadata: m.metadata,
+			isAdmin: m.isAdmin,
+			isBotAdmin: m.isBotAdmin,
+			api,
+		};
 		for (const plugin of this.plugins) {
 			if (typeof plugin.after === "function") {
 				try {
-					await plugin.after({ m, sock });
+					if (plugin.after.length === 1) {
+						await plugin.after(m);
+					} else {
+						await plugin.after(m, params);
+					}
 				} catch (err) {
 					console.error(
 						`Error in after() of plugin "${plugin.name}":`,

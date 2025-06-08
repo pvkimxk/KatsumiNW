@@ -4,7 +4,7 @@ export default {
 	name: "brat",
 	description: "Create a sticker brat.",
 	command: ["brat"],
-	usage: "$prefix$command text (-animated for text animated).",
+	usage: "$prefix$command <text> (-animated for text animated).",
 	permissions: "all",
 	hidden: false,
 	failed: "Failed to $command: %error",
