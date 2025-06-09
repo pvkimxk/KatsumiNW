@@ -553,7 +553,10 @@ export default async function serialize(sock, msg, store) {
 		m.isCommand = false;
 
 		m.expiration = m.msg?.contextInfo?.expiration || 0;
-		m.isMedia = !!m.msg?.mimetype || !!m.msg?.thumbnailDirectPath;
+		m.isMedia =
+			!!m.msg?.mimetype ||
+			!!m.msg?.thumbnailDirectPath ||
+			!!m.msg?.jpegThumbnail;
 
 		m.isQuoted = false;
 		if (m.msg?.contextInfo?.quotedMessage) {

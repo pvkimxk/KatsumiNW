@@ -1,3 +1,4 @@
+import { getEmojiRegex } from "../../lib/functions.js";
 import Sticker from "../../lib/sticker.js";
 import uploader from "../../lib/uploader.js";
 
@@ -26,9 +27,8 @@ export default {
 		const urlRegex =
 			/(https?:\/\/[^\s]+?\.(?:png|jpe?g|webp|gif|mp4|mov|webm))/i;
 		let isMedia = false;
-		let q, mime;
 
-		if (m.mentions[0]) {
+		if (m.mentions && m.mentions[0]) {
 			const pfpUrl = await sock
 				.profilePictureUrl(m.mentions[0], "image")
 				.catch(
@@ -46,6 +46,54 @@ export default {
 			return await m.reply({ sticker });
 		}
 
+		if (m?.quoted?.sender) {
+			const url = await sock
+				.profilePictureUrl(m.quoted.sender, "image")
+				.catch(
+					() =>
+						"https://i.pinimg.com/736x/f1/26/e3/f126e305c9a2ba39aba2b882584b2afd.jpg"
+				);
+			const username = await sock.getName(m.quoted.sender);
+
+			const request = {
+				type: "image",
+				format: "png",
+				backgroundColor: "#FFFFFF",
+				width: 512,
+				height: 786,
+				scale: 2,
+				messages: [
+					{
+						avatar: true,
+						from: { id: 8, name: username, photo: { url } },
+						text: m.quoted.text,
+						replyMessage: {},
+					},
+				],
+			};
+
+			const response = await fetch("https://qc.pdi.moe/generate", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify(request),
+			});
+
+			if (!response.ok) {
+				return m.reply("Failed to generate sticker.");
+			}
+
+			const data = await response.json();
+			const quotly = Buffer.from(data.result.image, "base64");
+			const sticker = await Sticker.create(quotly, {
+				packname: "@natsumiworld.",
+				author: m.pushName,
+				emojis: "🤣",
+			});
+			return await m.reply({ sticker });
+		}
+
+		let q = m.isQuoted ? m.quoted : m;
+		let mime = q && q.type ? q.type : "";
 		if (urlRegex.test(input)) {
 			urlMedia = input.match(urlRegex)[0];
 			mediaBuffer = Buffer.from(
@@ -53,12 +101,54 @@ export default {
 			);
 			input = input.replace(urlMedia, "").trim();
 			isMedia = true;
-		} else {
-			q = m.isQuoted ? m.quoted : m;
-			mime = q && q.type ? q.type : "";
-			if (/sticker|webp|image|video|webm|document/g.test(mime)) {
-				mediaBuffer = await q.download();
-				isMedia = true;
+		} else if (/sticker|webp|image|video|webm|document/g.test(mime)) {
+			mediaBuffer = await q.download();
+			isMedia = true;
+		} else if (q.jpegThumbnail) {
+			mediaBuffer = Buffer.from(q.jpegThumbnail, "base64");
+			isMedia = true;
+		}
+
+		if (!isMedia && input) {
+			const emojiRegex = getEmojiRegex();
+			const emojis = input.match(emojiRegex);
+
+			if (emojis && emojis.length === 1 && emojis[0] === input.trim()) {
+				const emojiUrl = getAnimatedEmojiUrl(emojis[0]);
+				const buffer = Buffer.from(
+					await fetch(emojiUrl).then((res) => res.arrayBuffer())
+				);
+				const sticker = await Sticker.create(buffer, {
+					packname: "@natsumiworld.",
+					author: m.pushName,
+					emojis: emojis[0],
+				});
+				return await m.reply({ sticker });
+			} else if (
+				emojis &&
+				emojis.length === 2 &&
+				emojis.join("") === input.trim()
+			) {
+				const [emoji1, emoji2] = emojis;
+				const url = `https://tenor.googleapis.com/v2/featured?key=AIzaSyAyimkuYQYF_FXVALexPuGQctUWRURdCYQ&contentfilter=high&media_filter=png_transparent&component=proactive&collection=emoji_kitchen_v5&q=${emoji1}_${emoji2}`;
+				const response = await fetch(url);
+				const data = await response.json();
+
+				if (!data.results || data.results.length === 0) {
+					return m.reply("No emoji mix result found.");
+				}
+
+				const mediaUrl =
+					data.results[0].media_formats.png_transparent.url;
+				const buffer = Buffer.from(
+					await fetch(mediaUrl).then((res) => res.arrayBuffer())
+				);
+				const sticker = await Sticker.create(buffer, {
+					packname: "@natsumiworld.",
+					author: m.pushName,
+					emojis: emojis.join(""),
+				});
+				return await m.reply({ sticker });
 			}
 		}
 
@@ -99,27 +189,20 @@ export default {
 		if (!isMedia && input.length === 0) {
 			const maxRetries = 5;
 			let attempts = 0;
-			let success = false;
 			let buffer = null;
-
-			while (attempts < maxRetries && !success) {
+			while (attempts < maxRetries) {
 				try {
 					const response = await fetch("https://s.hanni.baby");
 					const arrayBuffer = await response.arrayBuffer();
 					buffer = Buffer.from(arrayBuffer);
-					success = true;
+					break;
 				} catch (error) {
 					attempts++;
-					console.error(
-						`Attempt ${attempts} failed: ${error.message}`
-					);
 					if (attempts >= maxRetries) {
-						console.error("Max retries reached. Exiting.");
 						return m.reply(
 							"Failed to fetch random sticker after multiple attempts."
 						);
 					}
-					console.log("Retrying...");
 				}
 			}
 			const sticker = await Sticker.create(buffer, {
@@ -130,4 +213,11 @@ export default {
 			return await m.reply({ sticker });
 		}
 	},
+};
+
+const getAnimatedEmojiUrl = (emoji) => {
+	const codepoints = [...emoji]
+		.map((char) => char.codePointAt(0).toString(16))
+		.join("-");
+	return `https://fonts.gstatic.com/s/e/notoemoji/latest/${codepoints}/512.webp`;
 };
