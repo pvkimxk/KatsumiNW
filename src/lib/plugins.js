@@ -2,23 +2,26 @@ import { readdirSync, watch } from "fs";
 import NodeCache from "node-cache";
 import { dirname, join } from "path";
 import { fileURLToPath, pathToFileURL } from "url";
+import { BOT_CONFIG } from "../config/index.js";
+import * as db from "../lib/database/index.js";
 import { APIRequest as api } from "../utils/API/request.js";
 import print from "./print.js";
-import { getCollection } from "./database/db.js";
+import Store from "./store.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 class PluginManager {
-	constructor(botConfig, store) {
+	constructor(botConfig) {
 		this.plugins = [];
+		this.sessionName = BOT_CONFIG.sessionName;
 		this.cooldowns = new NodeCache({ stdTTL: 0, checkperiod: 60 });
 		this.usageLimits = new NodeCache({ stdTTL: 86400 });
 		this.botConfig = botConfig;
 		this.commandQueues = new Map();
 		this.processingStatus = new Map();
 		this.debounceTimeout = null;
-		this.store = store;
+		this.store = new Store(this.sessionName);
 	}
 
 	async loadPlugins() {
@@ -370,85 +373,85 @@ class PluginManager {
 		}
 	}
 
-async executePlugin(plugin, sock, m) {
-    const startTime = Date.now();
+	async executePlugin(plugin, sock, m) {
+		const startTime = Date.now();
 
-    const groupMetadata = m.metadata || {};
-    const participants = groupMetadata.participants || [];
+		const groupMetadata = m.metadata || {};
+		const participants = groupMetadata.participants || [];
 
-    const isAdmin =
-        m.isGroup &&
-        participants.some(
-            (p) =>
-                p.id === m.sender &&
-                (p.admin === "admin" || p.admin === "superadmin")
-        );
+		const isAdmin =
+			m.isGroup &&
+			participants.some(
+				(p) =>
+					p.id === m.sender &&
+					(p.admin === "admin" || p.admin === "superadmin")
+			);
 
-    const isBotAdmin =
-        m.isGroup &&
-        participants.some(
-            (p) =>
-                p.id === sock.user.id &&
-                (p.admin === "admin" || p.admin === "superadmin")
-        );
+		const isBotAdmin =
+			m.isGroup &&
+			participants.some(
+				(p) =>
+					p.id === sock.user.id &&
+					(p.admin === "admin" || p.admin === "superadmin")
+			);
 
-    const params = {
-        sock,
-        m,
-        text: m.text,
-        args: m.args,
-        plugins: this.plugins,
-        command: m.command,
-        prefix: m.prefix,
-        isOwner: m.isOwner,
-        groupMetadata,
-        isAdmin,
-        isBotAdmin,
-        api,
-        getCollection,
-        store: this.store,
-    };
+		const params = {
+			sock,
+			m,
+			text: m.text,
+			args: m.args,
+			plugins: this.plugins,
+			command: m.command,
+			prefix: m.prefix,
+			isOwner: m.isOwner,
+			groupMetadata,
+			isAdmin,
+			isBotAdmin,
+			api,
+			db,
+			store: this.store,
+		};
 
-    try {
-        print.info(
-            `⚡ Executing: ${plugin.name} by ${m.pushName} [${m.sender}]`
-        );
+		try {
+			print.info(
+				`⚡ Executing: ${plugin.name} by ${m.pushName} [${m.sender}]`
+			);
 
-        if (plugin.execute.length === 1) {
-            await plugin.execute(m);
-        } else {
-            const { m, ...rest } = params;
-            await plugin.execute(m, rest);
-        }
+			if (plugin.execute.length === 1) {
+				await plugin.execute(m);
+			} else {
+				const { m, ...rest } = params;
+				await plugin.execute(m, rest);
+			}
 
-        if (plugin.cooldown > 0) {
-            this.cooldowns.set(
-                `${m.sender}:${plugin.name}`,
-                true,
-                plugin.cooldown
-            );
-        }
-        if (plugin.react) {
-            await m.react("✅");
-        }
+			if (plugin.cooldown > 0) {
+				this.cooldowns.set(
+					`${m.sender}:${plugin.name}`,
+					true,
+					plugin.cooldown
+				);
+			}
+			if (plugin.react) {
+				await m.react("✅");
+			}
 
-        const duration = Date.now() - startTime;
-        print.info(`✓ Executed ${plugin.name} in ${duration}ms`);
-    } catch (error) {
-        print.error(`⚠ Plugin ${plugin.name} failed:`, error);
+			const duration = Date.now() - startTime;
+			print.info(`✓ Executed ${plugin.name} in ${duration}ms`);
+		} catch (error) {
+			print.error(`⚠ Plugin ${plugin.name} failed:`, error);
 
-        const fullCommand = m.prefix + m.command;
-        const errorMessage = plugin.failed
-            .replace("%command", fullCommand)
-            .replace("%error", error.message || "Internal error");
+			const fullCommand = m.prefix + m.command;
+			const errorMessage = plugin.failed
+				.replace("%command", fullCommand)
+				.replace("%error", error.message || "Internal error");
 
-        await m.reply(errorMessage);
+			await m.reply(errorMessage);
 
-        if (plugin.react) {
-            await m.react("❌");
-        }
-    }
-}
+			if (plugin.react) {
+				await m.react("❌");
+			}
+		}
+	}
 
 	getPlugins() {
 		return this.plugins;
