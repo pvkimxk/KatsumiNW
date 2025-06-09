@@ -3,7 +3,7 @@
     <img
         src="https://files.catbox.moe/1g4qtd.png"
         alt="Katsumi"
-        style="border-radius: 10px; max-width: 100%; height: auto;"
+        style="display:block; margin:-100px 20px; width:65%;"
     />
 </div>
 
