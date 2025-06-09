@@ -7,7 +7,6 @@
     />
 </div>
 
-
 # 🌸 Why You'll Love Katsumi
 
 - ⚡ <b>Lightning Fast</b>: Feels instant, even with tons of features!
@@ -18,12 +17,15 @@
 ## 🌈 Core Features
 
 ### 🔗 Multi-Database
+
 > Use **MongoDB**, **MySQL**, or JSON—effortless to switch. Perfect for any deployment style.
 
 ### 🎛️ Plugin System
+
 > Every feature is a tidy module. Install, remove, or upgrade with zero pain. Minimal bloat, max power.
 
 ### 🛠️ Full Customization
+
 > Tweak bot prefixes, owner, DB, experimental flags, and more via `.env`.
 
 ## 🚀 Getting Started
@@ -49,69 +51,70 @@ cp .env.example .env
 
 #### 4. Edit `.env` With Your Settings
 
-| Variable         | Description                        | Default                           |
-|------------------|------------------------------------|-----------------------------------|
-| MYSQL_HOST       | MySQL database host                | localhost                         |
-| MYSQL_PORT       | MySQL database port                | 3306                              |
-| MYSQL_USER       | MySQL username                     | root                              |
-| MYSQL_PASSWORD   | MySQL password                     | password                          |
-| MYSQL_DATABASE   | MySQL database name                | baileys                           |
-| BOT_SESSION_NAME | Session storage identifier         | session                           |
-| BOT_PREFIXES     | Command prefixes (comma-separated) | !,.,?                             |
-| USE_MONGO        | Enable MongoDB storage (true/false)| false                             |
-| MONGO_URI        | MongoDB connection URI             | mongodb://localhost:27017/database|
+| Variable         | Description                         | Default                            |
+| ---------------- | ----------------------------------- | ---------------------------------- |
+| MYSQL_HOST       | MySQL database host                 | localhost                          |
+| MYSQL_PORT       | MySQL database port                 | 3306                               |
+| MYSQL_USER       | MySQL username                      | root                               |
+| MYSQL_PASSWORD   | MySQL password                      | password                           |
+| MYSQL_DATABASE   | MySQL database name                 | baileys                            |
+| BOT_SESSION_NAME | Session storage identifier          | session                            |
+| BOT_PREFIXES     | Command prefixes (comma-separated)  | !,.,?                              |
+| USE_MONGO        | Enable MongoDB storage (true/false) | false                              |
+| MONGO_URI        | MongoDB connection URI              | mongodb://localhost:27017/database |
 
 ---
 
 ## 💥 Running the Bot
 
-- **Production:**  
-  ```bash
-  npm start
-  ```
-- **Development (auto-reload):**  
-  ```bash
-  npm run dev
-  ```
-- **Using PM2:**  
-  ```bash
-  npm run pm2
-  ```
+- **Production:**
+    ```bash
+    npm start
+    ```
+- **Development (auto-reload):**
+    ```bash
+    npm run dev
+    ```
+- **Using PM2:**
+    ```bash
+    npm run pm2
+    ```
 
 ---
 
 ## 🌟 Plugins: Power & Simplicity
 
 Every plugin = a single `.js` file.  
-*Example: `ping.js` — shows latency & server info.*
+_Example: `ping.js` — shows latency & server info._
 
 ```javascript
 import os from "os";
 import { performance } from "perf_hooks";
 
 export default {
-  name: "ping",
-  description: "Displays bot response speed and server info",
-  command: ["ping", "p"],
-  permissions: "all",
-  hidden: false,
-  category: "info",
-  cooldown: 0,
+	name: "ping",
+	description: "Displays bot response speed and server info",
+	command: ["ping", "p"],
+	permissions: "all",
+	hidden: false,
+	category: "info",
+	cooldown: 0,
 
-  async execute(m) {
-    const start = performance.now();
-    const ram = (os.totalmem() / Math.pow(1024, 3)).toFixed(2) + " GB";
-    const freeRam = (os.freemem() / Math.pow(1024, 3)).toFixed(2) + " GB";
-    await m.reply(
-`🚀 *PONG!*
+	async execute(m) {
+		const start = performance.now();
+		const ram = (os.totalmem() / Math.pow(1024, 3)).toFixed(2) + " GB";
+		const freeRam = (os.freemem() / Math.pow(1024, 3)).toFixed(2) + " GB";
+		await m.reply(
+			`🚀 *PONG!*
 ⏱️ Response Time: ${(performance.now() - start).toFixed(2)}ms
 💻 CPU: ${os.cpus().length} Core(s)
 📦 RAM: ${freeRam} / ${ram}
 🆙 Uptime: ${Math.floor(os.uptime() / 86400)} days`
-    );
-  },
+		);
+	},
 };
 ```
+
 or
 
 ```javascript
@@ -119,26 +122,26 @@ import os from "os";
 import { performance } from "perf_hooks";
 
 export default {
-  name: "ping",
-  description: "Displays bot response speed and server info",
-  command: ["ping", "p"],
-  permissions: "all",
-  hidden: false,
-  category: "info",
-  cooldown: 0,
+	name: "ping",
+	description: "Displays bot response speed and server info",
+	command: ["ping", "p"],
+	permissions: "all",
+	hidden: false,
+	category: "info",
+	cooldown: 0,
 
-  execute: async(m) => {
-    const start = performance.now();
-    const ram = (os.totalmem() / Math.pow(1024, 3)).toFixed(2) + " GB";
-    const freeRam = (os.freemem() / Math.pow(1024, 3)).toFixed(2) + " GB";
-    await m.reply(
-`🚀 *PONG!*
+	execute: async (m) => {
+		const start = performance.now();
+		const ram = (os.totalmem() / Math.pow(1024, 3)).toFixed(2) + " GB";
+		const freeRam = (os.freemem() / Math.pow(1024, 3)).toFixed(2) + " GB";
+		await m.reply(
+			`🚀 *PONG!*
 ⏱️ Response Time: ${(performance.now() - start).toFixed(2)}ms
 💻 CPU: ${os.cpus().length} Core(s)
 📦 RAM: ${freeRam} / ${ram}
 🆙 Uptime: ${Math.floor(os.uptime() / 86400)} days`
-    );
-  },
+		);
+	},
 };
 ```
 
@@ -156,27 +159,27 @@ export default {
 
 ### 🎯 Plugin Option Reference
 
-| Option       | Description             | Example/Values             |
-|--------------|------------------------|----------------------------|
-| command      | Plugin triggers         | ["ping", "p"]              |
-| permissions  | Who can use             | "all", "admin", "owner"   |
-| category     | Help menu group         | "info", "utils", ...       |
-| cooldown     | Cooldown in seconds     | 0 (no cooldown)            |
-| group        | Enable in groups?       | true/false                 |
-| private      | Enable in private chat? | true/false                 |
+| Option      | Description             | Example/Values          |
+| ----------- | ----------------------- | ----------------------- |
+| command     | Plugin triggers         | ["ping", "p"]           |
+| permissions | Who can use             | "all", "admin", "owner" |
+| category    | Help menu group         | "info", "utils", ...    |
+| cooldown    | Cooldown in seconds     | 0 (no cooldown)         |
+| group       | Enable in groups?       | true/false              |
+| private     | Enable in private chat? | true/false              |
 
 ---
 
 ## 🧑‍💻 Dev Tools
 
-- **Lint:**  
-  ```bash
-  npm run lint
-  ```
-- **Prettier:**  
-  ```bash
-  npm run prettier
-  ```
+- **Lint:**
+    ```bash
+    npm run lint
+    ```
+- **Prettier:**
+    ```bash
+    npm run prettier
+    ```
 
 ---
 
