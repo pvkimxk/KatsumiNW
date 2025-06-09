@@ -20,7 +20,7 @@ export default {
 	 * @param {import('baileys').WASocket} sock - The Baileys socket object.
 	 * @param {object} m - The serialized message object.
 	 */
-	execute: async(m, { api }) => {
+	execute: async (m, { api }) => {
 		let query = m.text;
 		if (m.quoted?.text.length > 0 && query.length > 0) {
 			query += "\n\n" + m.quoted.text;
