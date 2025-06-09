@@ -20,7 +20,7 @@ export default {
 	 * @param {import('baileys').WASocket} sock - The Baileys socket object.
 	 * @param {object} m - The serialized message object.
 	 */
-	execute: async (m, { sock }) => {
+	execute: async (m) => {
 		const q = m.quoted ? m.quoted : m;
 		const type = Object.keys(q.message || q)[0];
 		if (!q.message?.[type].viewOnce) {
@@ -29,19 +29,11 @@ export default {
 		const txt = q.message[type].caption || "";
 		const buffer = await q.download();
 		if (/audio/.test(type)) {
-			return await sock.sendMessage(
-				m.from,
-				{ audio: buffer, ptt: true },
-				{ quoted: m, ephemeralExpiration: m.expiration }
-			);
+			return await m.reply({ audio: buffer, ptt: true });
 		}
-		await sock.sendMessage(
-			m.from,
-			{
-				[type.includes("image") ? "image" : "video"]: buffer,
-				caption: txt,
-			},
-			{ quoted: m, ephemeralExpiration: m.expiration }
-		);
+		await m.reply({
+			[type.includes("image") ? "image" : "video"]: buffer,
+			caption: txt,
+		});
 	},
 };

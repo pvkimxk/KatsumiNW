@@ -68,7 +68,6 @@ class Message {
 				m.args = args;
 				m.text = text;
 
-				m.plugins = this.pluginManager.getPlugins() || [];
 
 				await print(m, sock);
 

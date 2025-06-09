@@ -45,21 +45,6 @@ const downloadMedia = async (message, pathFile) => {
 	return Buffer.concat(buffer);
 };
 
-// export const getContentType = (content) => {
-// 	if (content) {
-// 		const keys = Object.keys(content);
-// 		return keys.find(
-// 			(k) =>
-// 				(k === "conversation" ||
-// 					k.endsWith("Message") ||
-// 					k.includes("V2") ||
-// 					k.includes("V3")) &&
-// 				k !== "senderKeyDistributionMessage"
-// 		);
-// 	}
-// 	return null;
-// };
-
 function parseMessage(content) {
 	content = extractMessageContent(content);
 
@@ -568,7 +553,6 @@ export default async function serialize(sock, msg, store) {
 		m.isCommand = false;
 
 		m.expiration = m.msg?.contextInfo?.expiration || 0;
-		m.timestamps = msg.messageTimestamp * 1000;
 		m.isMedia = !!m.msg?.mimetype || !!m.msg?.thumbnailDirectPath;
 
 		m.isQuoted = false;
