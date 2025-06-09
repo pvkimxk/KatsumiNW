@@ -1,7 +1,7 @@
 <div align="center">
     <h1>Katsumi</h1>
     <img
-        src="https://files.catbox.moe/1g4qtd.pngg"
+        src="https://files.catbox.moe/1g4qtd.png"
         alt="Katsumi"
         style="border-radius: 10px; max-width: 100%; height: auto;"
     />
