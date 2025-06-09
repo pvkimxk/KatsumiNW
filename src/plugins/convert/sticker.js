@@ -8,7 +8,7 @@ export default {
 	usage: "$prefix$command reply/send image/video/url, or leave empty for random sticker.",
 	permissions: "all",
 	hidden: false,
-	failed: "Failed to $command: %error",
+	failed: "Failed to %command: %error",
 	wait: null,
 	category: "convert",
 	cooldown: 5,

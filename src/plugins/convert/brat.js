@@ -7,7 +7,7 @@ export default {
 	usage: "$prefix$command <text> (-animated for text animated).",
 	permissions: "all",
 	hidden: false,
-	failed: "Failed to $command: %error",
+	failed: "Failed to %command: %error",
 	wait: null,
 	category: "convert",
 	cooldown: 5,

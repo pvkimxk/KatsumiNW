@@ -26,14 +26,13 @@ export default {
 		if (!q.message?.[type].viewOnce) {
 			return m.reply("This message isn't viewonce.");
 		}
-		const txt = q.message[type].caption || "";
-		const buffer = await q.download();
+		const caption = q.message[type].caption || "";
 		if (/audio/.test(type)) {
-			return await m.reply({ audio: buffer, ptt: true });
+			return await m.reply({ audio: await q.download(), ptt: true });
 		}
 		await m.reply({
-			[type.includes("image") ? "image" : "video"]: buffer,
-			caption: txt,
+			[type.includes("image") ? "image" : "video"]: await q.download(),
+			caption,
 		});
 	},
 };

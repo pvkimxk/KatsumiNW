@@ -42,7 +42,7 @@ export default {
 				}
 			}
 
-			response += `\nꕥ _Tip: \`${m.prefix}help [command|category]\` for details._`;
+			response += `\nꕥ _Tip: \`${m.prefix}help [command or category]\` for details._`;
 		} else {
 			const query = m.args[0].toLowerCase();
 			const plugin = plugins.find((p) =>

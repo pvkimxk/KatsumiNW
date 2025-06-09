@@ -38,7 +38,6 @@ class Message {
 			try {
 				if (
 					!msg.message ||
-					msg.key.fromMe ||
 					msg.message.ephemeralMessage ||
 					msg.key.remoteJid === "status@broadcast"
 				) {
@@ -67,7 +66,6 @@ class Message {
 				m.command = command;
 				m.args = args;
 				m.text = text;
-
 
 				await print(m, sock);
 
