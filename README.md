@@ -1,7 +1,4 @@
-
-<h1 style="text-align:center; color:##f0fbff; margin-bottom:0.2em;">
-  <span style='color:#f0fbff;'>Katsumi</span>
-</h1>
+<h1 style="text-align: center;">Katsumi</h1>
 <p align="center">
   <img 
     style="display:block; margin:-100px 20px; width:65%;" 
@@ -9,15 +6,12 @@
     alt="Katsumi">
 </p>
 
-
-
 # 🌸 Why You'll Love Katsumi
 
 - ⚡ <b>Lightning Fast</b>: Feels instant, even with tons of features!
 - 🧩 <b>Plug & Play Modular</b>: Add new features as simply as drag-and-drop.
 - 🗄️ <b>Data Your Way</b>: Works with MySQL, MongoDB, or simple JSON.
 - 🦄 <b>Extreme Customization</b>: Change all settings in one `.env` file—no headaches!
-
 
 ## 🌈 Core Features
 
@@ -29,7 +23,6 @@
 
 ### 🛠️ Full Customization
 > Tweak bot prefixes, owner, DB, experimental flags, and more via `.env`.
-
 
 ## 🚀 Getting Started
 
