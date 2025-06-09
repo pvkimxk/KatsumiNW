@@ -682,6 +682,9 @@ export default async function serialize(sock, msg, store) {
 
 				m.quoted.download = (pathFile) =>
 					downloadMedia(m.quoted.message, pathFile);
+
+				m.quoted.delete = () =>
+					sock.sendMessage(m.from, { delete: m.quoted.key });
 			}
 		}
 	}
