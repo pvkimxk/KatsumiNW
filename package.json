@@ -10,7 +10,7 @@
 		"start": "node --env-file=.env src/main.js",
 		"dev": "node --watch --env-file=.env src/main.js",
 		"prettier": "npx prettier . --write",
-		"pm2": "pm2 start ecosystem.config.mjs",
+		"pm2": "pm2 start ecosystem.config.cjs",
 		"lint": "eslint"
 	},
 	"repository": {
