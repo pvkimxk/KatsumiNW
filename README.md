@@ -1,10 +1,12 @@
-<h1 style="text-align: center;">Katsumi</h1>
-<p align="center">
-  <img 
-    style="display:block; margin:-100px 20px; width:65%;" 
-    src="https://files.catbox.moe/1g4qtd.png" 
-    alt="Katsumi">
-</p>
+<div align="center">
+    <h1>Katsumi</h1>
+    <img
+        src="https://files.catbox.moe/1g4qtd.pngg"
+        alt="Katsumi"
+        style="border-radius: 10px; max-width: 100%; height: auto;"
+    />
+</div>
+
 
 # 🌸 Why You'll Love Katsumi
 
