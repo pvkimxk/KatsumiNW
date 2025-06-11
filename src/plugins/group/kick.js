@@ -34,14 +34,10 @@ export default {
 			return m.reply("You can't kick an admin");
 		}
 
-		await sock.sendMessage(
-			m.from,
-			{
-				text: `Kicked @${user.replace(/[^0-9]/g, "")} from ${groupMetadata.subject}`,
-				mentions: [user],
-			},
-			{ quoted: m, ephemeralExpiration: m.expiration }
-		);
+		await m.reply({
+			text: `Kicked @${user.replace(/[^0-9]/g, "")} from ${groupMetadata.subject}`,
+			mentions: [user],
+		});
 
 		await sock
 			.groupParticipantsUpdate(m.from, [user], "remove")

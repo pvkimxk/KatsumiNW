@@ -22,6 +22,8 @@ export default {
 
 	execute: async (m, { args, sock }) => {
 		let input = args.join(" ").trim();
+		let q = m.isQuoted ? m.quoted : m;
+		let mime = q && q.type ? q.type : "";
 		let urlMedia = null;
 		let mediaBuffer = null;
 		const urlRegex =
@@ -46,54 +48,57 @@ export default {
 			return await m.reply({ sticker });
 		}
 
-		if (m?.quoted?.sender) {
-			const url = await sock
-				.profilePictureUrl(m.quoted.sender, "image")
-				.catch(
-					() =>
-						"https://i.pinimg.com/736x/f1/26/e3/f126e305c9a2ba39aba2b882584b2afd.jpg"
-				);
-			const username = await sock.getName(m.quoted.sender);
+		if (m.isQuoted && m.quoted) {
+			if (/image|video|sticker|webp|document|audio/.test(mime)) {
+				mediaBuffer = await q.download();
+				isMedia = true;
+			} else if (q.text) {
+				const url = await sock
+					.profilePictureUrl(q.sender, "image")
+					.catch(
+						() =>
+							"https://i.pinimg.com/736x/f1/26/e3/f126e305c9a2ba39aba2b882584b2afd.jpg"
+					);
+				const username = await sock.getName(q.sender);
 
-			const request = {
-				type: "image",
-				format: "png",
-				backgroundColor: "#FFFFFF",
-				width: 512,
-				height: 786,
-				scale: 2,
-				messages: [
-					{
-						avatar: true,
-						from: { id: 8, name: username, photo: { url } },
-						text: m.quoted.text,
-						replyMessage: {},
-					},
-				],
-			};
+				const request = {
+					type: "quote",
+					format: "png",
+					backgroundColor: "#FFFFFF",
+					width: 512,
+					height: 786,
+					scale: 2,
+					messages: [
+						{
+							avatar: true,
+							from: { id: 8, name: username, photo: { url } },
+							text: q.text,
+							replyMessage: {},
+						},
+					],
+				};
 
-			const response = await fetch("https://qc.pdi.moe/generate", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify(request),
-			});
+				const response = await fetch("https://qc.pdi.moe/generate", {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify(request),
+				});
 
-			if (!response.ok) {
-				return m.reply("Failed to generate sticker.");
+				if (!response.ok) {
+					return m.reply("Failed to generate sticker.");
+				}
+
+				const data = await response.json();
+				const quotly = Buffer.from(data.result.image, "base64");
+				const sticker = await Sticker.create(quotly, {
+					packname: "@natsumiworld.",
+					author: m.pushName,
+					emojis: "🤣",
+				});
+				return await m.reply({ sticker });
 			}
-
-			const data = await response.json();
-			const quotly = Buffer.from(data.result.image, "base64");
-			const sticker = await Sticker.create(quotly, {
-				packname: "@natsumiworld.",
-				author: m.pushName,
-				emojis: "🤣",
-			});
-			return await m.reply({ sticker });
 		}
 
-		let q = m.isQuoted ? m.quoted : m;
-		let mime = q && q.type ? q.type : "";
 		if (urlRegex.test(input)) {
 			urlMedia = input.match(urlRegex)[0];
 			mediaBuffer = Buffer.from(
@@ -103,9 +108,6 @@ export default {
 			isMedia = true;
 		} else if (/sticker|webp|image|video|webm|document/g.test(mime)) {
 			mediaBuffer = await q.download();
-			isMedia = true;
-		} else if (q.jpegThumbnail) {
-			mediaBuffer = Buffer.from(q.jpegThumbnail, "base64");
 			isMedia = true;
 		}
 

@@ -1,13 +1,15 @@
+import { isMediaMessage, mimeMap } from "../../lib/media.js";
+
 export default {
 	name: "hidetag",
-	description: "Annoying message.",
-	command: ["ht", "everyone"],
+	description: "Send message with hidden tag (mention all members).",
+	command: ["ht", "hidetag"],
 	permissions: "admin",
 	hidden: false,
 	failed: "Failed to %command: %error",
 	wait: null,
-	category: "misc",
-	cooldown: 5,
+	category: "group",
+	cooldown: 3,
 	limit: false,
 	usage: "$prefix$command <text>",
 	react: false,
@@ -17,25 +19,45 @@ export default {
 	owner: false,
 
 	/**
-	 * @param {import('baileys').WASocket} sock - The Baileys socket object.
-	 * @param {object} m - The serialized message object.
-	 * @param {object} text - Additional text.
+	 * @param {import('baileys').WASocket} sock
+	 * @param {object} m
+	 * @param {object} options
 	 */
 	execute: async (m, { groupMetadata, text }) => {
 		const q = m.isQuoted ? m.quoted : m;
-		const len = groupMetadata.participants.length;
-		const mentions = [];
-		for (let i = 0; i < len; i++) {
-			const serialized = groupMetadata.participants[i].id.split("@")[0];
-			mentions.push({
-				tag: `@${serialized}\n`,
-				mention: `${serialized}@s.whatsapp.net`,
+		const type = q.type || "";
+		const mentions = groupMetadata.participants.map((p) => p.id);
+		let mediaBuffer, mediaType;
+
+		if (isMediaMessage(type)) {
+			try {
+				mediaBuffer = await q.download();
+				mediaType = mimeMap[type] || "document";
+			} catch (e) {
+				console.error("Error downloading media:", e);
+			}
+		}
+
+		const message = text || q.text || q.caption || "";
+
+		if (mediaType && mediaBuffer) {
+			const mediaMsg = { [mediaType]: mediaBuffer, mentions };
+			if (mediaType === "sticker" && message) {
+				await m.reply(mediaMsg);
+				return m.reply({ text: message, mentions });
+			}
+			if (message && mediaType !== "sticker") {
+				mediaMsg.caption = message;
+			}
+			return m.reply(mediaMsg);
+		}
+
+		if (!message) {
+			return m.reply({
+				text: "Please provide text or reply to the media/message you want to hidetag!",
 			});
 		}
 
-		await m.reply({
-			text: text ? text : q.text || "",
-			mentions: mentions.map((mention) => mention.mention),
-		});
+		return m.reply({ text: message, mentions });
 	},
 };

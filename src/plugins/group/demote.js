@@ -26,14 +26,10 @@ export default {
 			return m.reply("Reply or tag a user");
 		}
 
-		await sock.sendMessage(
-			m.from,
-			{
-				text: `Demote @${user.replace(/[^0-9]/g, "")} to be admin at ${groupMetadata.subject}`,
-				mentions: [user],
-			},
-			{ quoted: m, ephemeralExpiration: m.expiration }
-		);
+		await m.reply({
+			text: `Demote @${user.replace(/[^0-9]/g, "")} to be admin at ${groupMetadata.subject}`,
+			mentions: [user],
+		});
 
 		await sock
 			.groupParticipantsUpdate(m.from, [user], "demote")
