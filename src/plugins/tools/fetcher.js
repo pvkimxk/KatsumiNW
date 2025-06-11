@@ -77,7 +77,10 @@ export default {
 
 		if (contentType === "audio") {
 			const convert = await to_audio(buffer, "mp3");
-			return m.reply({ audio: convert });
+			return m.reply({
+				audio: Buffer.from(convert),
+				mimetype: "audio/mpeg",
+			});
 		}
 
 		if (headers?.["content-type"]?.includes("json")) {
@@ -86,8 +89,8 @@ export default {
 				const obj = JSON.parse(text);
 				text = JSON.stringify(obj, null, 2);
 			} catch (e) {
-                console.log(e);
-            }
+				console.log(e);
+			}
 			if (text.length > 4000) {
 				return m.reply({
 					document: buffer,
