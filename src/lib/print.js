@@ -5,19 +5,19 @@ const log = (type, message, error = null) => {
 	let color;
 	switch (type.toUpperCase()) {
 		case "INFO":
-			color = Colors.FgGreen;
+			color = Colors.Bright;
 			break;
 		case "WARN":
-			color = Colors.FgYellow;
-			break;
-		case "ERROR":
 			color = Colors.FgRed;
 			break;
+		case "ERROR":
+			color = Colors.BgRed;
+			break;
 		case "DEBUG":
-			color = Colors.FgCyan;
+			color = Colors.FgGray;
 			break;
 		default:
-			color = Colors.FgWhite;
+			color = Colors.FgGray;
 			break;
 	}
 	let output = colorize(
@@ -60,14 +60,14 @@ export const print = async (m, store) => {
 			}
 		}
 
-		console.log(colorize(Colors.FgCyan, "----- Incoming Message -----"));
+		console.log(colorize(Colors.FgWhite, "----- Incoming Message -----"));
 		console.log(
 			colorize(
-				Colors.FgYellow,
+				Colors.FgWhite,
 				`[${timestamp}] [${chatName}] From: ${m.pushName} (${m.sender.split("@")[0]})`
 			)
 		);
-		console.log(colorize(Colors.FgMagenta, `[Type]: ${m.type}`));
+		console.log(colorize(Colors.FgWhite, `[Type]: ${m.type}`));
 		console.log(
 			colorize(
 				Colors.FgWhite,
@@ -76,10 +76,10 @@ export const print = async (m, store) => {
 		);
 		if (m.isCommand) {
 			console.log(
-				colorize(Colors.FgGreen, `[Command]: ${m.prefix}${m.command}`)
+				colorize(Colors.FgWhite, `[Command]: ${m.prefix}${m.command}`)
 			);
 		}
-		console.log(colorize(Colors.FgCyan, "----------------------------"));
+		console.log(colorize(Colors.FgWhite, "----------------------------"));
 	} catch (error) {
 		log("ERROR", "Failed to print message", error);
 	}

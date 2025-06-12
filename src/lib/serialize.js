@@ -5,6 +5,7 @@ import {
 	downloadContentFromMessage,
 	downloadMediaMessage,
 	extractMessageContent,
+	generateForwardMessageContent,
 	generateWAMessage,
 	generateWAMessageFromContent,
 	getContentType,
@@ -508,6 +509,35 @@ export function Client({ sock, store }) {
 			},
 			enumerable: false,
 		},
+
+		copyNForward: {
+			async value(jid, message, forwardingScore = true, options = {}) {
+				let m = generateForwardMessageContent(
+					message,
+					!!forwardingScore
+				);
+				let mtype = Object.keys(m)[0];
+				if (
+					forwardingScore &&
+					typeof forwardingScore == "number" &&
+					forwardingScore > 1
+				) {
+					m[mtype].contextInfo.forwardingScore += forwardingScore;
+				}
+				let preparedMessage = generateWAMessageFromContent(jid, m, {
+					...options,
+					userJid: sock.user.id,
+				});
+
+				await sock.relayMessage(jid, preparedMessage.message, {
+					messageId: preparedMessage.key.id,
+					additionalAttributes: { ...options },
+				});
+
+				return preparedMessage;
+			},
+			enumerable: true,
+		},
 	});
 
 	return client;
@@ -830,6 +860,29 @@ export default async function serialize(sock, msg, store) {
 
 				m.quoted.delete = () =>
 					sock.sendMessage(m.from, { delete: m.quoted.key });
+
+				let vM = (m.quoted.fakeObj = proto.WebMessageInfo.fromObject({
+					key: {
+						fromMe: m.quoted.fromMe,
+						remoteJid: m.quoted.from,
+						id: m.quoted.id,
+					},
+					message: m.quoted.message,
+					...(m.isGroup
+						? {
+								participant: m.quoted.sender,
+							}
+						: {}),
+				}));
+				m.getQuotedObj = m.getQuotedMessage = async () => {
+					if (!m.quoted.id) {
+						return null;
+					}
+					let q = proto.WebMessageInfo.fromObject(
+						(await store.loadMessage(m.from, m.quoted.id)) || vM
+					);
+					return await serialize(sock, q, store);
+				};
 			}
 		}
 	}
