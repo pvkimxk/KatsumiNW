@@ -73,7 +73,7 @@ class Connect {
 		}
 
 		let usePairingCode = false;
-		if (!state.creds.me) {
+		if (!state.creds.registered) {
 			const loginChoice = await askQuestion(
 				"Choose login method: (1) QR Code or (2) Pairing Code? Enter 1 or 2: "
 			);
@@ -154,7 +154,7 @@ class Connect {
 			if (
 				usePairingCode &&
 				connection === "connecting" &&
-				!state.creds.me
+				!state.creds.registered
 			) {
 				const phoneNumber = await askQuestion(
 					"Enter your phone number (E.164 format, WITHOUT + sign, e.g., 6281234567890): "

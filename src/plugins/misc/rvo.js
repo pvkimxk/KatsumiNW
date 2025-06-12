@@ -37,6 +37,7 @@ export default {
 				};
 
 		await sock.sendMessage(isPrivate ? m.sender : m.from, mediaMsg, {
+			quoted: m,
 			ephemeralExpiration: m.expiration,
 		});
 		isPrivate;

@@ -87,10 +87,13 @@ export default {
 					{ userJid: sock.user.jid }
 				);
 
-				await sock.sendMessage(res.jid, {
-					forward: msgs,
-					ephemeralExpiration: m.expiration,
-				});
+				await sock.sendMessage(
+					res.jid,
+					{
+						forward: msgs,
+					},
+					{ ephemeralExpiration: m.expiration }
+				);
 			}
 		}
 	},

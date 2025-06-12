@@ -17,14 +17,13 @@ export const MYSQL_CONFIG = {
  */
 export const BOT_CONFIG = {
 	sessionName: process.env.BOT_SESSION_NAME || "sessions",
-	prefixes: process.env.BOT_PREFIXES
-		? process.env.BOT_PREFIXES.split(",")
-		: ["!", ".", "#"],
-
+	prefixes: (process.env.BOT_PREFIXES || "!").split(","),
 	ownerJids: process.env.OWNER_JIDS
-		? JSON.parse(process.env.OWNER_JIDS)
-		: ["6285175106460"],
-	allowExperimental: process.env.BOT_ALLOW_EXPERIMENTAL,
+		? process.env.OWNER_JIDS.includes("[")
+			? JSON.parse(process.env.OWNER_JIDS.replace(/'/g, '"'))
+			: process.env.OWNER_JIDS.split(",")
+		: [],
+	allowExperimental: process.env.BOT_ALLOW_EXPERIMENTAL !== "false",
 };
 
 /**

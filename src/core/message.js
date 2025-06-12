@@ -36,11 +36,7 @@ class Message {
 
 		for (const msg of messages) {
 			try {
-				if (
-					!msg.message ||
-					msg.message.ephemeralMessage ||
-					msg.key.remoteJid === "status@broadcast"
-				) {
+				if (!msg.message) {
 					continue;
 				}
 

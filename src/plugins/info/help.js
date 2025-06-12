@@ -50,7 +50,7 @@ export default {
 			);
 
 			if (plugin && !plugin.hidden && (!plugin.owner || isOwner)) {
-				response += `ꕥ Command: *${plugin.name}*\n`;
+				response += `ꕥ Command: *${plugin.name}*\n\n`;
 				response += `• *Description:* ${plugin.description}\n`;
 				response += `• *Aliases:*  \`${plugin.command.join(", ")}\`\n`;
 				response += `• *Category:* ${plugin.category.charAt(0).toUpperCase() + plugin.category.slice(1)}\n`;

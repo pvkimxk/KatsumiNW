@@ -29,7 +29,7 @@ const connectToMongoDB = async (
 		uri = `mongodb${isSrv ? "+srv" : ""}://${username}:${password}@${host}:${port}`;
 	}
 
-	print.info("Connecting to MongoDB with URI:", uri);
+	print.info(`Connecting to MongoDB with URI: ${uri}`);
 
 	try {
 		const client = new MongoClient(uri);

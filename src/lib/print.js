@@ -1,16 +1,36 @@
+import { Colors, colorize } from "./colors.js";
+
 const log = (type, message, error = null) => {
 	const timestamp = new Date().toLocaleString("id-ID");
-	let output = `[${timestamp}] [BOT ${type.toUpperCase()}] ${message}`;
-
+	let color;
+	switch (type.toUpperCase()) {
+		case "INFO":
+			color = Colors.FgGreen;
+			break;
+		case "WARN":
+			color = Colors.FgYellow;
+			break;
+		case "ERROR":
+			color = Colors.FgRed;
+			break;
+		case "DEBUG":
+			color = Colors.FgCyan;
+			break;
+		default:
+			color = Colors.FgWhite;
+			break;
+	}
+	let output = colorize(
+		color,
+		`[${timestamp}] [BOT ${type.toUpperCase()}] ${message}`
+	);
 	if (error instanceof Error) {
-		output += `\nError: ${error.message}`;
-		if (error.stack) {
-			output += `\nStack: ${error.stack}`;
-		}
+		output += `\n${colorize(Colors.FgRed, "Error: " + error.message)}`;
+		if (error.stack)
+			output += `\n${colorize(Colors.FgGray, "Stack: " + error.stack)}`;
 	} else if (error) {
 		output += `\nAdditional Info: ${JSON.stringify(error, null, 2)}`;
 	}
-
 	console.log(output);
 };
 
@@ -40,18 +60,26 @@ export const print = async (m, store) => {
 			}
 		}
 
-		console.log("--- Incoming Message ---");
+		console.log(colorize(Colors.FgCyan, "----- Incoming Message -----"));
 		console.log(
-			`[${timestamp}] [${chatName}] From: ${m.pushName} (${m.sender.split("@")[0]})`
+			colorize(
+				Colors.FgYellow,
+				`[${timestamp}] [${chatName}] From: ${m.pushName} (${m.sender.split("@")[0]})`
+			)
 		);
-		console.log(`[Type]: ${m.type}`);
+		console.log(colorize(Colors.FgMagenta, `[Type]: ${m.type}`));
 		console.log(
-			`[Body]: ${m.body ? m.body.substring(0, 100) + (m.body.length > 100 ? "..." : "") : "[Non-text message]"}`
+			colorize(
+				Colors.FgWhite,
+				`[Body]: ${m.body ? m.body.substring(0, 100) + (m.body.length > 100 ? "..." : "") : "[Non-text message]"}`
+			)
 		);
 		if (m.isCommand) {
-			console.log(`[Command]: ${m.prefix}${m.command}`);
+			console.log(
+				colorize(Colors.FgGreen, `[Command]: ${m.prefix}${m.command}`)
+			);
 		}
-		console.log("------------------------");
+		console.log(colorize(Colors.FgCyan, "----------------------------"));
 	} catch (error) {
 		log("ERROR", "Failed to print message", error);
 	}

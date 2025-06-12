@@ -13,14 +13,15 @@ import {
 	proto,
 } from "baileys";
 import { fileTypeFromBuffer } from "file-type";
-import Crypto from "node:crypto";
-import { existsSync, promises } from "node:fs";
+import { randomBytes } from "node:crypto";
+import { existsSync, promises, readFileSync } from "node:fs";
 import { join } from "node:path";
 import pino from "pino";
-import { escapeRegExp, getFile } from "./functions.js";
+import { BOT_CONFIG } from "../config/index.js";
+import * as Func from "./functions.js";
 import { mimeMap } from "./media.js";
 
-const randomId = (length = 16) => Crypto.randomBytes(length).toString("hex");
+const randomId = (length = 16) => randomBytes(length).toString("hex");
 
 /**
  * Download the media from the message.
@@ -84,6 +85,19 @@ const parsePhoneNumber = (number) => {
 	return number;
 };
 
+function resolveLidToJid(participant, participants = [], lidMap = {}) {
+	if (!participant?.endsWith?.("@lid")) {
+		return participant;
+	}
+	if (lidMap && lidMap[participant]) {
+		return lidMap[participant];
+	}
+	const found = participants.find(
+		(p) => p.lid === participant || p.id === participant
+	);
+	return found?.phoneNumber || found?.id || participant;
+}
+
 export function Client({ sock, store }) {
 	const client = Object.defineProperties(sock, {
 		sendAlbum: {
@@ -92,7 +106,7 @@ export function Client({ sock, store }) {
 					jid,
 					{
 						messageContextInfo: {
-							messageSecret: Crypto.randomBytes(32),
+							messageSecret: randomBytes(32),
 						},
 						albumMessage: {
 							expectedImageCount: array.filter((a) =>
@@ -122,7 +136,7 @@ export function Client({ sock, store }) {
 						}
 					);
 					img.message.messageContextInfo = {
-						messageSecret: Crypto.randomBytes(32),
+						messageSecret: randomBytes(32),
 						messageAssociation: {
 							associationType: 1,
 							parentMessageKey: album.key,
@@ -315,15 +329,40 @@ export function Client({ sock, store }) {
 		},
 
 		parseMention: {
-			value(text) {
-				return (
-					[...text.matchAll(/@([0-9]{5,16}|0)/g)].map(
-						(v) => v[1] + "@s.whatsapp.net"
-					) || []
+			value(text, participants = []) {
+				const tags = [...text.matchAll(/@([0-9]{5,16}|0)/g)].map(
+					(v) => v[1]
 				);
+				if (
+					!participants ||
+					!Array.isArray(participants) ||
+					!tags.length
+				)
+					return [];
+
+				const ids = [];
+				for (const number of tags) {
+					const found = participants.find(
+						(p) =>
+							(p.phoneNumber && p.phoneNumber.includes(number)) ||
+							(p.id && p.id.replace(/\D/g, "").endsWith(number))
+					);
+					if (found) {
+						if (found.id && found.id.endsWith("@lid")) {
+							ids.push(found.id);
+						} else if (found.phoneNumber) {
+							ids.push(found.phoneNumber);
+						} else if (found.id) {
+							ids.push(found.id);
+						}
+					} else {
+						ids.push(number + "@s.whatsapp.net");
+					}
+				}
+				return ids;
 			},
 		},
-
+		
 		downloadMediaMessage: {
 			async value(message, filename) {
 				let media = await downloadMediaMessage(
@@ -350,6 +389,81 @@ export function Client({ sock, store }) {
 				}
 
 				return media;
+			},
+			enumerable: true,
+		},
+
+		sendMedia: {
+			async value(jid, url, quoted = "", options = {}) {
+				let { mime, data: buffer, ext, size } = await Func.getFile(url);
+				mime = options?.mimetype ? options.mimetype : mime;
+				let data = { text: "" },
+					mimetype = /audio/i.test(mime) ? "audio/mpeg" : mime;
+				if (size > 45000000)
+					data = {
+						document: buffer,
+						mimetype: mime,
+						fileName: options?.fileName
+							? options.fileName
+							: `${m.pushName} (${new Date()}).${ext}`,
+						...options,
+					};
+				else if (options.asDocument)
+					data = {
+						document: buffer,
+						mimetype: mime,
+						fileName: options?.fileName
+							? options.fileName
+							: `${m.pushName} (${new Date()}).${ext}`,
+						...options,
+					};
+				else if (options.asSticker || /webp/.test(mime)) {
+					let pathFile = await Sticker.create(
+						{ mimetype, data: buffer },
+						{ ...options }
+					);
+					data = {
+						sticker: readFileSync(pathFile),
+						mimetype: "image/webp",
+						...options,
+					};
+					existsSync(pathFile) ? await promises.unlink(pathFile) : "";
+				} else if (/image/.test(mime))
+					data = {
+						image: buffer,
+						mimetype: options?.mimetype
+							? options.mimetype
+							: "image/png",
+						...options,
+					};
+				else if (/video/.test(mime))
+					data = {
+						video: buffer,
+						mimetype: options?.mimetype
+							? options.mimetype
+							: "video/mp4",
+						...options,
+					};
+				else if (/audio/.test(mime))
+					data = {
+						audio: buffer,
+						mimetype: options?.mimetype
+							? options.mimetype
+							: "audio/mpeg",
+						...options,
+					};
+				else
+					data = {
+						document: buffer,
+						mimetype: mime,
+						...options,
+					};
+				return await sock.sendMessage(jid, data, {
+					quoted,
+					ephemeralExpiration: m.expiration,
+					messageId: randomId(32),
+					...options,
+				});
 			},
 			enumerable: true,
 		},
@@ -436,13 +550,9 @@ export default async function serialize(sock, msg, store) {
 			(m.id.startsWith("BAE5") && m.id.length === 16) ||
 			(m.id.startsWith("B24E") && m.id.length === 20);
 		m.isGroup = m.from.endsWith("@g.us");
-		m.participant =
-			jidNormalizedUser(msg?.participant || m.key.participant) || false;
-		m.sender = jidNormalizedUser(
-			m.fromMe ? sock.user.id : m.isGroup ? m.participant : m.from
-		);
 	}
 
+	let lidMap = {};
 	if (m.isGroup) {
 		let metadata = store.getGroupMetadata(m.from);
 		if (!metadata) {
@@ -460,10 +570,16 @@ export default async function serialize(sock, msg, store) {
 
 		if (metadata) {
 			m.metadata = metadata;
+			for (const p of metadata.participants || []) {
+				if (p.id?.endsWith?.("@lid") && p.phoneNumber) {
+					lidMap[p.id] = p.phoneNumber;
+				}
+			}
+
 			m.groupAdmins = metadata.participants
 				.filter((p) => p.admin)
 				.map((p) => ({
-					id: p.id,
+					id: p.phoneNumber || p.id,
 					admin: p.admin,
 				}));
 
@@ -479,12 +595,18 @@ export default async function serialize(sock, msg, store) {
 
 			const botJid = normalizeJid(sock.user.id);
 
-			m.isAdmin = m.groupAdmins.some(
-				(admin) => normalizeJid(admin.id) === normalizeJid(m.sender)
-			);
-			m.isBotAdmin = m.groupAdmins.some(
-				(admin) => normalizeJid(admin.id) === botJid
-			);
+			m.isAdmin = m.groupAdmins.some((admin) => {
+				const adminNum = (admin.id.match(/\d{8,}/) || [])[0];
+				const senderNum = m.sender
+					? (m.sender.match(/\d{8,}/) || [])[0]
+					: "";
+				return adminNum && senderNum && adminNum === senderNum;
+			});
+			m.isBotAdmin = m.groupAdmins.some((admin) => {
+				const adminNum = (admin.id.match(/\d{8,}/) || [])[0];
+				const botNum = (botJid.match(/\d{8,}/) || [])[0];
+				return adminNum && botNum && adminNum === botNum;
+			});
 		} else {
 			m.metadata = null;
 			m.groupAdmins = [];
@@ -493,24 +615,35 @@ export default async function serialize(sock, msg, store) {
 		}
 	}
 
+	let _participant =
+		jidNormalizedUser(msg?.participant || m.key?.participant) || "";
+	m.participant =
+		m.isGroup && m.metadata
+			? resolveLidToJid(_participant, m.metadata.participants, lidMap)
+			: _participant;
+
+	m.sender = m.fromMe
+		? jidNormalizedUser(sock.user.id)
+		: m.isGroup && m.participant
+			? m.participant
+			: m.from;
+
 	m.pushName = msg.pushName;
-	m.isOwner =
-		m.sender &&
-		JSON.parse(process.env.OWNER_JIDS).includes(
-			m.sender.replace(/\D+/g, "")
-		);
+
+	const senderNum = (m.sender.match(/\d{8,}/) || [])[0];
+	m.isOwner = senderNum && BOT_CONFIG.ownerJids.includes(senderNum);
 
 	if (m.message) {
 		m.type = getContentType(m.message) || Object.keys(m.message)[0];
 		let edited = m.message.editedMessage?.message?.protocolMessage;
-		let msg = edited?.editedMessage || m.message;
-		msg = m.type == "conversation" ? msg : msg[m.type];
+		let msgContent = edited?.editedMessage || m.message;
+		msgContent = m.type == "conversation" ? msgContent : msgContent[m.type];
 
 		if (edited?.editedMessage) {
-			m.message = msg =
+			m.message = msgContent =
 				store.loadMessage(m.from.toString(), edited.key.id).message ||
 				edited.editedMessage;
-			msg = msg[getContentType(msg)];
+			msgContent = msgContent[getContentType(msgContent)];
 		}
 		m.msg = parseMessage(m.message[m.type]) || m.message[m.type];
 		m.mentions = [
@@ -545,7 +678,7 @@ export default async function serialize(sock, msg, store) {
 		m.args =
 			m.body
 				.trim()
-				.replace(new RegExp("^" + escapeRegExp(m.prefix), "i"), "")
+				.replace(new RegExp("^" + Func.escapeRegExp(m.prefix), "i"), "")
 				.replace(m.command, "")
 				.split(/ +/)
 				.filter((a) => a) || [];
@@ -603,9 +736,19 @@ export default async function serialize(sock, msg, store) {
 				m.quoted.isGroup = m.quoted.from.endsWith("@g.us");
 				m.quoted.participant =
 					jidNormalizedUser(m.msg.contextInfo.participant) || false;
-				m.quoted.sender = jidNormalizedUser(
+
+				let _quotedSender = jidNormalizedUser(
 					m.msg.contextInfo.participant || m.quoted.from
 				);
+				m.quoted.sender =
+					m.isGroup && m.metadata
+						? resolveLidToJid(
+								_quotedSender,
+								m.metadata.participants,
+								lidMap
+							)
+						: _quotedSender;
+
 				m.quoted.mentions = [
 					...(m.quoted.msg?.contextInfo?.mentionedJid || []),
 					...(m.quoted.msg?.contextInfo?.groupMentions?.map(
@@ -645,7 +788,10 @@ export default async function serialize(sock, msg, store) {
 				m.quoted.body
 					.trim()
 					.replace(
-						new RegExp("^" + escapeRegExp(m.quoted.prefix), "i"),
+						new RegExp(
+							"^" + Func.escapeRegExp(m.quoted.prefix),
+							"i"
+						),
 						""
 					)
 					.replace(m.quoted.command, "")
@@ -666,8 +812,8 @@ export default async function serialize(sock, msg, store) {
 					) || [])[0] || "";
 				m.quoted.isOwner =
 					m.quoted.sender &&
-					JSON.parse(process.env.OWNER_JIDS).includes(
-						m.quoted.sender.replace(/\D+/g, "")
+					BOT_CONFIG.ownerJids.includes(
+						(m.quoted.sender.match(/\d{8,}/) || [])[0]
 					);
 				m.quoted.isBot = m.quoted.id
 					? (m.quoted.id.startsWith("BAE5") &&
@@ -700,7 +846,7 @@ export default async function serialize(sock, msg, store) {
 			/^https?:\/\//.test(text) ||
 			existsSync(text)
 		) {
-			let data = await getFile(text);
+			let data = await Func.getFile(text);
 			if (
 				!options.mimetype &&
 				(/utf-8|json/i.test(data.mime) ||
@@ -791,9 +937,11 @@ export default async function serialize(sock, msg, store) {
 	m.download = (pathFile) => downloadMedia(m.message, pathFile);
 
 	m.isUrl =
-		(m.text.match(
-			/https?:\/\/(www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&//=]*)/gi
-		) || [])[0] || "";
+		((m.text &&
+			m.text.match(
+				/https?:\/\/(www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&//=]*)/gi
+			)) ||
+			[])[0] || "";
 
 	return m;
 }
