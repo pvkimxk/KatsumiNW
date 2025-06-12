@@ -362,7 +362,7 @@ export function Client({ sock, store }) {
 				return ids;
 			},
 		},
-		
+
 		downloadMediaMessage: {
 			async value(message, filename) {
 				let media = await downloadMediaMessage(
@@ -405,7 +405,7 @@ export function Client({ sock, store }) {
 						mimetype: mime,
 						fileName: options?.fileName
 							? options.fileName
-							: `${m.pushName} (${new Date()}).${ext}`,
+							: `file (${new Date()}).${ext}`,
 						...options,
 					};
 				else if (options.asDocument)
@@ -414,7 +414,7 @@ export function Client({ sock, store }) {
 						mimetype: mime,
 						fileName: options?.fileName
 							? options.fileName
-							: `${m.pushName} (${new Date()}).${ext}`,
+							: `file (${new Date()}).${ext}`,
 						...options,
 					};
 				else if (options.asSticker || /webp/.test(mime)) {
@@ -460,7 +460,6 @@ export function Client({ sock, store }) {
 					};
 				return await sock.sendMessage(jid, data, {
 					quoted,
-					ephemeralExpiration: m.expiration,
 					messageId: randomId(32),
 					...options,
 				});
