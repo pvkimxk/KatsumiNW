@@ -64,7 +64,7 @@ export default {
 			const buffer = Buffer.from(await response.arrayBuffer());
 			const type = await fileTypeFromBuffer(buffer);
 			const mime = type?.mime || "application/octet-stream";
-			const mediaType = mime.startsWith("video") ? "video" : "image"; // Instagram umumnya video atau gambar
+			const mediaType = mime.startsWith("video") ? "video" : "image";
 			return { [mediaType]: buffer };
 		};
 
