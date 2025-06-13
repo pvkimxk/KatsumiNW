@@ -5,7 +5,7 @@ export default {
 	usage: "$prefix$command https://vt.tiktok.com/ZSkSAodxb/",
 	permissions: "all",
 	hidden: false,
-	failed: "Failed to %command: %error",
+	failed: "Failed to execute %command: %error",
 	wait: null,
 	category: "downloader",
 	cooldown: 5,
@@ -28,40 +28,40 @@ export default {
 			return m.reply("Input URL TikTok.");
 		}
 
-		const { data } = await api.Gratis.get("/downloader/tiktok", {
-			url: input,
-		});
-
-		const { result, status, message } = data;
+		const {
+			data: { result, status, message },
+		} = await api.Gratis.get("/downloader/tiktok", { url: input });
 
 		if (!status) {
 			return m.reply(message);
 		}
 
-		let msg = "*🕺 TIKTOK DOWNLOADER*\n\n";
-		msg += `*👤 User*: ${result.author.nickname} (@${result.author.unique_id})\n`;
-		msg += `*🆔 ID Video*: ${result.aweme_id}\n`;
-		msg += `*🌍 Region*: ${result.region}\n`;
-		msg += `*📝 Caption*: ${result.desc ? result.desc : "-"}\n`;
-		msg += `*⏱️ Duration*: ${result.duration}s\n`;
-		msg += `*🎶 Music*: ${result.download.music_info?.title || "-"} - ${result.download.music_info?.author || "-"}\n`;
-		msg += `*👁️ Views*: ${result.info?.play_count || 0}\n`;
-		msg += `*👍 Like*: ${result.info?.digg_count || 0} | 💬 ${result.info?.comment_count || 0} | 🔁 Share: ${result.info?.share_count || 0}\n`;
-		msg += `*🗓️ Upload*: ${result.info?.create_time ? new Date(result.info.create_time * 1000).toLocaleString("id-ID") : "-"}\n`;
+		const { author, aweme_id, region, desc, duration, download, info } =
+			result;
 
-		if (result.download.images && result.download.images.length > 0) {
-			for (const img of result.download.images) {
+		let msg = "*🕺 TIKTOK DOWNLOADER*\n\n";
+		msg += `*👤 User*: ${author.nickname} (@${author.unique_id})\n`;
+		msg += `*🆔 ID Video*: ${aweme_id}\n`;
+		msg += `*🌍 Region*: ${region}\n`;
+		msg += `*📝 Caption*: ${desc || "-"}\n`;
+		msg += `*⏱️ Duration*: ${duration}s\n`;
+		msg += `*🎶 Music*: ${download.music_info?.title || "-"} - ${download.music_info?.author || "-"}\n`;
+		msg += `*👁️ Views*: ${info?.play_count || 0}\n`;
+		msg += `*👍 Like*: ${info?.digg_count || 0} | 💬 ${info?.comment_count || 0} | 🔁 Share: ${result.info?.share_count || 0}\n`;
+		msg += `*🗓️ Upload*: ${info?.create_time ? new Date(info.create_time * 1000).toLocaleString("id-ID") : "-"}\n`;
+
+		if (download.images?.length > 0) {
+			for (const img of download.images) {
 				await m.reply({ image: { url: img } });
 			}
 		}
 
 		await m.reply({
-			video: { url: result.download.original },
+			video: { url: download.original },
 			caption: msg.trim(),
 		});
-
 		await m.reply({
-			audio: { url: result.download.music },
+			audio: { url: download.music },
 			mimetype: "audio/mpeg",
 		});
 	},

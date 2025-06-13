@@ -4,7 +4,7 @@ export default {
 	command: ["ai", "gpt"],
 	permissions: "all",
 	hidden: false,
-	failed: "Failed to %command: %error",
+	failed: "Failed to execute %command: %error",
 	wait: null,
 	category: "ai",
 	cooldown: 5,
