@@ -66,9 +66,7 @@ export default async function fesnuk(post, cookie, useragent) {
 
 				if (imageUrlMatch && imageUrlMatch.length > 0) {
 					const uniqueBaseUrls = new Set();
-
 					const filteredUrls = [];
-
 					for (const url of imageUrlMatch) {
 						if (url.includes("/v/t39.30808-6/")) {
 							if (!/\/s\d{1,3}x\d{1,3}\//.test(url)) {
@@ -76,16 +74,13 @@ export default async function fesnuk(post, cookie, useragent) {
 
 								if (!uniqueBaseUrls.has(baseUrl)) {
 									uniqueBaseUrls.add(baseUrl);
-
 									filteredUrls.push(url);
 								}
 							}
 						}
 					}
-
 					if (filteredUrls.length > 0) {
 						imageUrl = filteredUrls;
-
 						imagePost = true;
 					}
 				}
@@ -99,14 +94,11 @@ export default async function fesnuk(post, cookie, useragent) {
 							const commentParts = comment.match(
 								/"author":\{"__typename":"User","id":"(.*?)","name":"(.*?)".*?"body":\{"text":"(.*?)"/
 							);
-
 							return {
 								author: {
 									id: commentParts[1],
-
 									name: commentParts[2],
 								},
-
 								text: cleanText(commentParts[3]),
 							};
 						})
@@ -139,8 +131,8 @@ export default async function fesnuk(post, cookie, useragent) {
 
 				if (imagePost) {
 					type = "image";
-				} else {
-					if (sdMatch && sdMatch[1]) type = "video";
+				} else if (sdMatch && sdMatch[1]) {
+					type = "video";
 				}
 
 				const result = {
