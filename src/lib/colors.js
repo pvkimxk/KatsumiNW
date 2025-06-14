@@ -17,6 +17,12 @@ export const Colors = {
 	FgWhite: "\x1b[37m",
 	FgGray: "\x1b[90m",
 
+	FgSoftBlue: "\x1b[94m",
+	FgSoftCyan: "\x1b[96m",
+	FgSoftMagenta: "\x1b[95m",
+	FgSoftGreen: "\x1b[92m",
+	FgSoftYellow: "\x1b[93m",
+
 	BgBlack: "\x1b[40m",
 	BgRed: "\x1b[41m",
 	BgGreen: "\x1b[42m",

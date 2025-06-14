@@ -7,7 +7,7 @@ export default {
 	usage: "$prefix$command https://www.instagram.com/reel/C_Fyz3bJ2PF/",
 	permissions: "all",
 	hidden: false,
-	failed: "Failed to %command: %error",
+	failed: "Failed to execute %command: %error",
 	wait: null,
 	category: "downloader",
 	cooldown: 5,
@@ -21,7 +21,7 @@ export default {
 	async execute(m, { api }) {
 		const input =
 			m.text && m.text.trim() !== ""
-				? m.text.trim()
+				? m.text
 				: m.quoted && m.quoted.url
 					? m.quoted.url
 					: null;
@@ -30,70 +30,50 @@ export default {
 			return m.reply("Input URL Instagram.");
 		}
 
-		const { data } = await api.Gratis.get("/downloader/instagram", {
-			url: input,
-		});
-
-		const { result, status, message } = data;
+		const {
+			data: { result, status, message },
+		} = await api.Gratis.get("/downloader/instagram", { url: input });
 
 		if (!status) {
 			return m.reply(message);
 		}
 
-		let caption = "*📸 INSTAGRAM DOWNLOADER*\n\n";
-		caption += `*👤 User*: @${result.meta?.username || "-"}\n`;
-		caption += `*📝 Caption*: ${result.meta?.title || "-"}\n`;
-		caption += `*👍 Like*: ${result.meta?.like_count || 0}\n`;
-		caption += `*🗓️ Upload*: ${result.meta?.taken_at ? new Date(result.meta.taken_at * 1000).toLocaleString("id-ID") : "-"}\n`;
-		caption += `*🔗 Source*: ${result.meta?.source}\n`;
+		const { meta } = result;
+		let caption =
+			"*📸 INSTAGRAM DOWNLOADER*\n\n" +
+			`*👤 User*: @${meta?.username || "-"}\n` +
+			`*📝 Caption*: ${meta?.title || "-"}\n` +
+			`*👍 Like*: ${meta?.like_count || 0}\n` +
+			`*🗓️ Upload*: ${meta?.taken_at ? new Date(meta.taken_at * 1000).toLocaleString("id-ID") : "-"}\n` +
+			`*🔗 Source*: ${meta?.source || "N/A"}`;
 
-		if (
-			Array.isArray(result.meta?.comments) &&
-			result.meta.comments.length > 0
-		) {
-			caption += "\n💬 *Comments*:\n";
-			result.meta.comments.slice(0, 5).forEach((comment, idx) => {
-				caption += `*${idx + 1}.* @${comment.username}: ${comment.text}\n`;
-			});
-			const remainingComments = result.meta.comment_count - 5;
-			if (remainingComments > 0) {
-				caption += `and ${remainingComments} other comment${remainingComments > 1 ? "s" : ""}...\n`;
+		if (meta?.comments?.length > 0) {
+			const commentsText = meta.comments
+				.slice(0, 5)
+				.map((c, i) => `*${i + 1}.* @${c.username}: ${c.text}`)
+				.join("\n");
+			const remaining = meta.comment_count - 5;
+			caption += `\n\n💬 *Comments*:\n${commentsText}`;
+			if (remaining > 0) {
+				caption += `\nand ${remaining} another comments...`;
 			}
 		}
 
-		const getT = async (url) => {
-			const res = await fetch(url);
-			const arrayBuffer = await res.arrayBuffer();
-			const buffer = Buffer.from(arrayBuffer);
-			const fileType = await fileTypeFromBuffer(buffer);
-			const mime = fileType ? fileType.mime : "application/octet-stream";
-			return [
-				mime.includes("video")
-					? "video"
-					: mime.includes("audio")
-						? "audio"
-						: "image",
-				buffer,
-				mime,
-			];
+		const downloadMedia = async (url) => {
+			const response = await fetch(url);
+			const buffer = Buffer.from(await response.arrayBuffer());
+			const type = await fileTypeFromBuffer(buffer);
+			const mime = type?.mime || "application/octet-stream";
+			const mediaType = mime.startsWith("video") ? "video" : "image";
+			return { [mediaType]: buffer };
 		};
 
-		if (Array.isArray(result.urls) && result.urls.length > 0) {
-			let isFirst = true;
-			for (const media of result.urls) {
-				const [type, downloadData] = await getT(media.url);
-				if (!type) {
-					return m.reply("Failed to retrieve the media type.");
-				}
+		const firstMedia = await downloadMedia(result.urls[0].url);
+		await m.reply({ ...firstMedia, caption: caption.trim() });
 
-				const mediaMsg = {
-					[type]: downloadData,
-					...(isFirst && { caption: caption.trim() }),
-				};
-
-				await m.reply(mediaMsg);
-				isFirst = false;
-			}
+		for (let i = 1; i < result.urls.length; i++) {
+			const mediaData = await downloadMedia(result.urls[i].url);
+			await m.reply(mediaData);
 		}
 	},
 };

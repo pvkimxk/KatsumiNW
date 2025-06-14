@@ -1,28 +1,38 @@
 import axios from "axios";
 
-const gratisInstance = axios.create({
-	baseURL: "https://api.apigratis.tech",
-});
-gratisInstance.defaults.validateStatus = () => true;
+function createClient(baseURL) {
+	const instance = axios.create({
+		baseURL,
+		validateStatus: () => true,
+	});
+	return instance;
+}
 
 function makeClient(instance) {
+	const safeCall =
+		(fn) =>
+		async (...args) => {
+			try {
+				return await fn(...args);
+			} catch (e) {
+				return e?.response;
+			}
+		};
+
 	return {
-		async get(path, params, options) {
-			return instance
-				.get(path, { params, ...options })
-				.catch((e) => e?.response);
-		},
-		async post(path, data, options) {
-			return instance.post(path, data, options).catch((e) => e?.response);
-		},
-		async request(options) {
-			return instance.request({ ...options }).catch((e) => e?.response);
-		},
+		get: safeCall((path, params, options) =>
+			instance.get(path, { params, ...options })
+		),
+		post: safeCall((path, data, options) =>
+			instance.post(path, data, options)
+		),
+		request: safeCall((options) => instance.request({ ...options })),
 	};
 }
 
-export const Gratis = makeClient(gratisInstance);
+export const Gratis = makeClient(createClient("https://api.apigratis.tech"));
+export const Sayuran = makeClient(createClient("https://sayuran.vip/api"));
 
-export const APIRequest = {
-	Gratis,
-};
+export const APIRequest = { Gratis, Sayuran };
+
+export default APIRequest;
