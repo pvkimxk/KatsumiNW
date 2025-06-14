@@ -55,7 +55,7 @@ export default {
 			const remaining = meta.comment_count - 5;
 			caption += `\n\n💬 *Comments*:\n${commentsText}`;
 			if (remaining > 0) {
-				caption += `\ndan ${remaining} komentar lainnya...`;
+				caption += `\nand ${remaining} another comments...`;
 			}
 		}
 

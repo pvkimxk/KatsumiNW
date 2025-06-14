@@ -71,7 +71,7 @@ class Message {
 				if (settings.groupOnly && !m.isGroup && !m.isOwner) {
 					continue;
 				}
-				if (settings.privateChatOnly && m.isGroup && !!m.isOwner) {
+				if (settings.privateChatOnly && m.isGroup && !m.isOwner) {
 					continue;
 				}
 
@@ -79,7 +79,6 @@ class Message {
 					await this.pluginManager.enqueueCommand(sock, m);
 				}
 
-				// TODO: make after execute handler
 				await this.pluginManager.handleAfterPlugins(m, sock);
 			} catch (error) {
 				console.error("Error processing message:", error);
